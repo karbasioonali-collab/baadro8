@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
-import { IRAN_PROVINCES, getCitiesOfProvince } from "@/lib/iran-locations";
+import { IRAN_PROVINCES, getCitiesOfProvince, findProvinceForCity } from "@/lib/iran-locations";
 import { AddressFields, emptyAddress, type AddressFormValue } from "@/components/order/AddressFields";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
@@ -67,7 +67,13 @@ type Step =
   | "ie-destination"
   | "parcel";
 
-export function HomeServiceFlow({ envelopeTypes }: { envelopeTypes: EnvelopeType[] }) {
+export function HomeServiceFlow({
+  envelopeTypes,
+  intracityCities,
+}: {
+  envelopeTypes: EnvelopeType[];
+  intracityCities: string[];
+}) {
   const router = useRouter();
   const toast = useToast();
 
@@ -93,6 +99,11 @@ export function HomeServiceFlow({ envelopeTypes }: { envelopeTypes: EnvelopeType
   function chooseService(type: ServiceType) {
     setServiceType(type);
     setStep(type === "intracity" ? "ic-city" : "ie-origin-city");
+  }
+
+  function chooseIntracityCity(cityName: string) {
+    setIcCity(cityName);
+    setIcProvince(findProvinceForCity(cityName));
   }
 
   function submit() {
@@ -150,30 +161,30 @@ export function HomeServiceFlow({ envelopeTypes }: { envelopeTypes: EnvelopeType
     <div className="rounded-2xl sm:rounded-3xl bg-white border border-neutral-200 shadow-sm shadow-neutral-900/[0.04] p-5 sm:p-8">
       {step === "service" && (
         <StepShell title="می‌خواهید چطور ارسال کنید؟" stepIndex={0} totalSteps={totalSteps}>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => chooseService("intracity")}
               className={clsx(
-                "flex flex-col items-center gap-3 rounded-2xl border-2 p-6 transition-colors",
+                "flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-3xl border-2 p-8 sm:p-10 transition-colors",
                 "border-neutral-200 hover:border-brand-blue-400 hover:bg-brand-blue-50"
               )}
             >
-              <span className="text-4xl">🏍️</span>
-              <span className="font-bold text-neutral-800">پیک موتوری</span>
-              <span className="text-sm text-neutral-500">ارسال درون‌شهری، همان روز</span>
+              <span className="text-7xl">🏍️</span>
+              <span className="text-xl font-bold text-neutral-800">پیک موتوری</span>
+              <span className="text-base text-neutral-500">ارسال درون‌شهری، همان روز</span>
             </button>
             <button
               type="button"
               onClick={() => chooseService("intercity")}
               className={clsx(
-                "flex flex-col items-center gap-3 rounded-2xl border-2 p-6 transition-colors",
+                "flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-3xl border-2 p-8 sm:p-10 transition-colors",
                 "border-neutral-200 hover:border-brand-green-400 hover:bg-brand-green-50"
               )}
             >
-              <span className="text-4xl">📮</span>
-              <span className="font-bold text-neutral-800">ارسال پستی</span>
-              <span className="text-sm text-neutral-500">ارسال بین‌شهری به سراسر ایران</span>
+              <span className="text-7xl">📮</span>
+              <span className="text-xl font-bold text-neutral-800">ارسال پستی</span>
+              <span className="text-base text-neutral-500">ارسال بین‌شهری به سراسر ایران</span>
             </button>
           </div>
         </StepShell>
@@ -186,16 +197,20 @@ export function HomeServiceFlow({ envelopeTypes }: { envelopeTypes: EnvelopeType
           totalSteps={totalSteps}
           onBack={() => setStep("service")}
         >
-          <CityPicker
-            title=""
-            province={icProvince}
-            city={icCity}
-            onChangeProvince={(v) => {
-              setIcProvince(v);
-              setIcCity("");
-            }}
-            onChangeCity={setIcCity}
-          />
+          {intracityCities.length === 0 ? (
+            <p className="text-sm text-neutral-500">
+              فعلاً هیچ شهری برای سرویس پیک موتوری تعریف نشده است.
+            </p>
+          ) : (
+            <Select label="شهر" value={icCity} onChange={(e) => chooseIntracityCity(e.target.value)}>
+              <option value="">انتخاب شهر</option>
+              {intracityCities.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+          )}
           <NextButton disabled={!icCity} onClick={() => setStep("ic-origin")} />
         </StepShell>
       )}

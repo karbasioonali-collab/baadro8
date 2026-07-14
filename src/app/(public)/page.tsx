@@ -3,7 +3,7 @@ import { HomeSlider } from "@/components/home/HomeSlider";
 import { HomeServiceFlow } from "@/components/home/HomeServiceFlow";
 
 export default async function HomePage() {
-  const [slides, envelopeTypes] = await Promise.all([
+  const [slides, envelopeTypes, coveredCities] = await Promise.all([
     prisma.homepageSlide.findMany({
       where: { active: true },
       orderBy: { orderIndex: "asc" },
@@ -12,7 +12,14 @@ export default async function HomePage() {
       where: { active: true },
       orderBy: { orderIndex: "asc" },
     }),
+    prisma.coveredCity.findMany({
+      where: { company: { type: "intracity", active: true } },
+      select: { cityName: true },
+      distinct: ["cityName"],
+    }),
   ]);
+
+  const intracityCities = [...new Set(coveredCities.map((c) => c.cityName))].sort();
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
@@ -42,6 +49,7 @@ export default async function HomePage() {
 
       <HomeServiceFlow
         envelopeTypes={envelopeTypes.map((e) => ({ id: e.id, name: e.name }))}
+        intracityCities={intracityCities}
       />
 
       <div className="mt-16 grid gap-6 sm:grid-cols-3">

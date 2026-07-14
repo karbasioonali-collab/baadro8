@@ -422,3 +422,11 @@ export function getAllCities(): { province: string; city: IranCity }[] {
     p.cities.map((city) => ({ province: p.name, city }))
   );
 }
+
+/** استانی که یک شهرستان مشخص در آن قرار دارد را برمی‌گرداند (برای شهرهای تحت پوشش پیک) */
+export function findProvinceForCity(cityName: string): string {
+  for (const province of IRAN_PROVINCES) {
+    if (province.cities.some((c) => c.name === cityName)) return province.name;
+  }
+  return "";
+}
