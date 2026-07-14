@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: {
@@ -12,7 +13,12 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icons/icon.svg",
-    apple: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "بادرو",
   },
 };
 
@@ -30,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-neutral-50 text-foreground">
+        <ServiceWorkerRegister />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
