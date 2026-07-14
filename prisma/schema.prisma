@@ -1,0 +1,403 @@
+// Prisma schema — پلتفرم بادرو
+// مستندات: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  normal
+  business // فاز بعدی
+}
+
+enum CompanyType {
+  intercity // پستی بین‌شهری
+  intracity // پیک درون‌شهری
+}
+
+enum PricingSourceType {
+  internal_formula // فرمول/جدول داخلی — اولویت اول MVP
+  external_api // فاز دوم
+  page_automation // فاز سوم
+}
+
+enum RuleType {
+  formula
+  tiered
+}
+
+enum CommissionType {
+  percent
+  fixed
+}
+
+enum TrackingMethod {
+  internal // برای سفارش‌های ثبت‌شده در بادرو
+  external_url
+  api
+}
+
+enum ServiceType {
+  intercity
+  intracity
+}
+
+enum ParcelType {
+  envelope
+  package
+}
+
+enum PaymentStatus {
+  unpaid
+  paid
+  not_applicable
+}
+
+enum OrderStatus {
+  registered // ثبت شده
+  confirmed // تایید شده توسط شرکت
+  collecting // در حال جمع‌آوری
+  shipping // در حال ارسال
+  delivered // تحویل شده
+  canceled // لغو شده
+}
+
+enum ChangedByType {
+  admin
+  employee
+  company_account
+  company_webhook
+  system
+}
+
+enum OtpPurpose {
+  login
+  status_notification
+}
+
+// ماژول‌های قابل کنترل در RBAC کارمندان
+enum PermissionModule {
+  dashboard
+  companies
+  pricing
+  orders
+  commission_report
+  users
+  employees
+}
+
+// ---------------------------------------------------------------------------
+// کاربران و احراز هویت
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  mobile    String   @unique
+  email     String?
+  role      UserRole @default(normal)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders      Order[]
+  orderBatches OrderBatch[]
+
+  @@map("users")
+}
+
+model Employee {
+  id           String    @id @default(cuid())
+  name         String
+  mobile       String    @unique
+  username     String    @unique
+  passwordHash String
+  isFullAdmin  Boolean   @default(false) // ادمین کامل: دسترسی به همه بخش‌ها + مدیریت کارمندان
+  active       Boolean   @default(true)
+  createdById  String?
+  createdBy    Employee? @relation("EmployeeCreatedBy", fields: [createdById], references: [id])
+  createdEmployees Employee[] @relation("EmployeeCreatedBy")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  permissions       EmployeePermission[]
+  statusChanges      OrderStatusHistory[]
+  auditedOrderEdits  Order[]              @relation("OrderLastEditedByEmployee")
+
+  @@map("employees")
+}
+
+model EmployeePermission {
+  id         String            @id @default(cuid())
+  employeeId String
+  employee   Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  module     PermissionModule
+  canView    Boolean           @default(false)
+  canEdit    Boolean           @default(false)
+
+  @@unique([employeeId, module])
+  @@map("employee_permissions")
+}
+
+model OtpCode {
+  id        String     @id @default(cuid())
+  mobile    String
+  code      String
+  purpose   OtpPurpose @default(login)
+  expiresAt DateTime
+  consumed  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  @@index([mobile, purpose])
+  @@map("otp_codes")
+}
+
+// ---------------------------------------------------------------------------
+// شرکت‌های پستی/پیک
+// ---------------------------------------------------------------------------
+
+model Company {
+  id     String      @id @default(cuid())
+  name   String
+  logoUrl String?
+  type   CompanyType
+  active Boolean     @default(true)
+
+  pricingSourceType PricingSourceType @default(internal_formula)
+
+  commissionType  CommissionType @default(percent)
+  commissionValue Decimal        @default(0) @db.Decimal(10, 2)
+
+  contractInfo String? // اطلاعات تماس/قرارداد داخلی، غیرعمومی
+
+  trackingMethod   TrackingMethod @default(internal)
+  trackingEndpoint String? // URL یا API endpoint استعلام کد رهگیری
+
+  // برای external_api (فاز دوم) — از هم‌اکنون در مدل پیش‌بینی شده
+  apiBaseUrl String?
+  apiKey     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coveredCities CoveredCity[]
+  pricingRules  PricingRule[]
+  accounts      CompanyAccount[]
+  orders        Order[]
+  orderBatches  OrderBatch[]
+
+  @@map("companies")
+}
+
+model CompanyAccount {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  username     String   @unique
+  mobile       String?
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  statusChanges OrderStatusHistory[]
+
+  @@map("company_accounts")
+}
+
+model CoveredCity {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cityName  String
+
+  @@unique([companyId, cityName])
+  @@map("covered_cities")
+}
+
+// فرمول/جدول قیمت هر شرکت
+model PricingRule {
+  id         String             @id @default(cuid())
+  companyId  String
+  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sourceType PricingSourceType  @default(internal_formula)
+  ruleType   RuleType           @default(formula)
+
+  // برای ruleType = formula: { basePrice, pricePerKg, pricePerKm }
+  formulaParams Json?
+
+  // برای ruleType = tiered: { weightTiers: [{minWeight,maxWeight,price}], distanceFactors: [{minDistance,maxDistance,factor}] }
+  tiers Json?
+
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pricing_rules")
+}
+
+// شاخص فاصله تقریبی هر شهرستان از مرکز (تهران = ۰)
+model CityDistanceIndex {
+  id                  String @id @default(cuid())
+  province            String
+  cityName            String @unique
+  distanceFromCenterKm Int
+
+  @@map("city_distance_index")
+}
+
+// انواع پاکت قابل انتخاب در صفحه اصلی
+model EnvelopeType {
+  id            String  @id @default(cuid())
+  name          String
+  priceModifier Decimal @default(0) @db.Decimal(10, 2)
+  maxWeightKg   Decimal? @db.Decimal(6, 2)
+  active        Boolean @default(true)
+  orderIndex    Int     @default(0)
+
+  orders Order[]
+
+  @@map("envelope_types")
+}
+
+// اسلایدهای صفحه اصلی
+model HomepageSlide {
+  id          String   @id @default(cuid())
+  imageUrl    String
+  title       String
+  description String?
+  linkUrl     String?
+  orderIndex  Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("homepage_slides")
+}
+
+// ---------------------------------------------------------------------------
+// آدرس
+// ---------------------------------------------------------------------------
+
+model Address {
+  id          String   @id @default(cuid())
+  province    String
+  city        String
+  street      String
+  alley       String?
+  plaque      String
+  floor       String?
+  description String?
+  postalCode  String?
+  lat         Float?
+  lng         Float?
+  createdAt   DateTime @default(now())
+
+  ordersAsOrigin      Order[] @relation("OrderOriginAddress")
+  ordersAsDestination Order[] @relation("OrderDestinationAddress")
+
+  @@map("addresses")
+}
+
+// ---------------------------------------------------------------------------
+// سفارش‌ها
+// ---------------------------------------------------------------------------
+
+// دسته‌ای از چند مرسوله که با هم برای یک شرکت ثبت می‌شوند
+model OrderBatch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+
+  orders Order[]
+
+  @@map("order_batches")
+}
+
+model Order {
+  id             String   @id @default(cuid())
+  trackingCode   String   @unique
+  batchId        String
+  batch          OrderBatch @relation(fields: [batchId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id])
+  serviceType    ServiceType
+
+  originAddressId      String
+  originAddress        Address @relation("OrderOriginAddress", fields: [originAddressId], references: [id])
+  destinationAddressId String
+  destinationAddress   Address @relation("OrderDestinationAddress", fields: [destinationAddressId], references: [id])
+
+  parcelType     ParcelType
+  envelopeTypeId String?
+  envelopeType   EnvelopeType? @relation(fields: [envelopeTypeId], references: [id])
+
+  weightKg    Decimal? @db.Decimal(6, 2)
+  lengthCm    Int?
+  widthCm     Int?
+  heightCm    Int?
+  itemNote    String?
+
+  calculatedPrice Decimal       @db.Decimal(12, 2)
+  commissionAmount Decimal      @default(0) @db.Decimal(12, 2)
+  paymentStatus   PaymentStatus @default(not_applicable)
+  status          OrderStatus   @default(registered)
+
+  lastEditedByEmployeeId String?
+  lastEditedByEmployee   Employee? @relation("OrderLastEditedByEmployee", fields: [lastEditedByEmployeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  statusHistory OrderStatusHistory[]
+
+  @@index([companyId, status])
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderStatusHistory {
+  id        String        @id @default(cuid())
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  changedBy ChangedByType
+
+  changedByEmployeeId String?
+  changedByEmployee   Employee? @relation(fields: [changedByEmployeeId], references: [id])
+  changedByCompanyAccountId String?
+  changedByCompanyAccount  CompanyAccount? @relation(fields: [changedByCompanyAccountId], references: [id])
+
+  note      String?
+  changedAt DateTime @default(now())
+
+  @@index([orderId])
+  @@map("order_status_history")
+}
+
+// ---------------------------------------------------------------------------
+// فرم تماس با ما
+// ---------------------------------------------------------------------------
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  mobile    String?
+  email     String?
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}

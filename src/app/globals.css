@@ -1,0 +1,116 @@
+@import "tailwindcss";
+@import "@fontsource/vazirmatn/400.css";
+@import "@fontsource/vazirmatn/500.css";
+@import "@fontsource/vazirmatn/600.css";
+@import "@fontsource/vazirmatn/700.css";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1f2a24;
+
+  /* رنگ اصلی برند — آبی بیبی: حس اطمینان و آرامش */
+  --color-brand-blue-50: #f1f9fd;
+  --color-brand-blue-100: #dcf0fa;
+  --color-brand-blue-200: #b9e1f5;
+  --color-brand-blue-300: #a8d8f0;
+  --color-brand-blue-400: #7bc3e8;
+  --color-brand-blue-500: #4ba9db;
+  --color-brand-blue-600: #2f8bc0;
+  --color-brand-blue-700: #276e9a;
+  --color-brand-blue-800: #235c7f;
+  --color-brand-blue-900: #1f4c69;
+
+  /* رنگ ثانویه برند — سبز کاهویی: حس حمل‌ونقل هوشمند و محیط‌زیستی */
+  --color-brand-green-50: #f6faee;
+  --color-brand-green-100: #e9f3d5;
+  --color-brand-green-200: #d3e7ae;
+  --color-brand-green-300: #a8c86a;
+  --color-brand-green-400: #93bb4f;
+  --color-brand-green-500: #7ba33c;
+  --color-brand-green-600: #62822f;
+  --color-brand-green-700: #4d6627;
+  --color-brand-green-800: #405423;
+  --color-brand-green-900: #37481f;
+
+  --color-neutral-50: #fafaf9;
+  --color-neutral-100: #f4f4f3;
+  --color-neutral-200: #e7e6e4;
+  --color-neutral-300: #d3d1cd;
+  --color-neutral-400: #a8a6a0;
+  --color-neutral-500: #7c7a75;
+  --color-neutral-600: #5c5a56;
+  --color-neutral-700: #454340;
+  --color-neutral-800: #302f2c;
+  --color-neutral-900: #1f1e1c;
+
+  --color-success: #3fa15e;
+  --color-warning: #e0a72c;
+  --color-danger: #d5493f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-blue-50: var(--color-brand-blue-50);
+  --color-brand-blue-100: var(--color-brand-blue-100);
+  --color-brand-blue-200: var(--color-brand-blue-200);
+  --color-brand-blue-300: var(--color-brand-blue-300);
+  --color-brand-blue-400: var(--color-brand-blue-400);
+  --color-brand-blue-500: var(--color-brand-blue-500);
+  --color-brand-blue-600: var(--color-brand-blue-600);
+  --color-brand-blue-700: var(--color-brand-blue-700);
+  --color-brand-blue-800: var(--color-brand-blue-800);
+  --color-brand-blue-900: var(--color-brand-blue-900);
+
+  --color-brand-green-50: var(--color-brand-green-50);
+  --color-brand-green-100: var(--color-brand-green-100);
+  --color-brand-green-200: var(--color-brand-green-200);
+  --color-brand-green-300: var(--color-brand-green-300);
+  --color-brand-green-400: var(--color-brand-green-400);
+  --color-brand-green-500: var(--color-brand-green-500);
+  --color-brand-green-600: var(--color-brand-green-600);
+  --color-brand-green-700: var(--color-brand-green-700);
+  --color-brand-green-800: var(--color-brand-green-800);
+  --color-brand-green-900: var(--color-brand-green-900);
+
+  --color-neutral-50: var(--color-neutral-50);
+  --color-neutral-100: var(--color-neutral-100);
+  --color-neutral-200: var(--color-neutral-200);
+  --color-neutral-300: var(--color-neutral-300);
+  --color-neutral-400: var(--color-neutral-400);
+  --color-neutral-500: var(--color-neutral-500);
+  --color-neutral-600: var(--color-neutral-600);
+  --color-neutral-700: var(--color-neutral-700);
+  --color-neutral-800: var(--color-neutral-800);
+  --color-neutral-900: var(--color-neutral-900);
+
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-neutral-50);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+* {
+  border-color: var(--color-neutral-200);
+}
+
+/* اسکرول‌بار مینیمال */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 8px;
+}
