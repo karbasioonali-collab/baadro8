@@ -1,7 +1,12 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-const databaseUrl = process.env["DATABASE_URL"];
+// trim می‌کنیم چون کپی‌پیست مقدار در فرم Render گاهی یک فاصله/newline اضافه یا
+// دو کوتیشن اضافه در ابتدا/انتهای رشته باقی می‌گذارد که باعث می‌شود این مقدار
+// به‌عنوان یک connection string معتبر خوانده نشود.
+const databaseUrl = process.env["DATABASE_URL"]
+  ?.trim()
+  .replace(/^['"]|['"]$/g, "");
 
 // «prisma generate» فقط اسکیما را می‌خواند و به دیتابیس وصل نمی‌شود، پس نباید
 // اگر DATABASE_URL هنوز تنظیم نشده (مثلاً در مرحله build قبل از تنظیم env var

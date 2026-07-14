@@ -3,7 +3,8 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { IRAN_PROVINCES } from "../src/lib/iran-locations";
 import bcrypt from "bcryptjs";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const connectionString = process.env.DATABASE_URL?.trim().replace(/^['"]|['"]$/g, "");
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 async function seedCityDistanceIndex() {
