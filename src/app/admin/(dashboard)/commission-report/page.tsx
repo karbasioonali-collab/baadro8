@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatToman } from "@/lib/validation";
+import { requireStaffView } from "@/lib/auth/require-permission";
 
 function monthRange(monthStr: string | undefined) {
   const now = new Date();
@@ -16,6 +17,7 @@ export default async function CommissionReportPage({
 }: {
   searchParams: Promise<{ month?: string }>;
 }) {
+  await requireStaffView("commission_report");
   const { month } = await searchParams;
   const { start, end, monthStr } = monthRange(month);
 

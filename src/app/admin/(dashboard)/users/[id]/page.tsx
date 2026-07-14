@@ -3,12 +3,14 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { OrderStatusBadge } from "@/components/panel/OrderStatusBadge";
 import { formatToman } from "@/lib/validation";
+import { requireStaffView } from "@/lib/auth/require-permission";
 
 export default async function AdminUserDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireStaffView("users");
   const { id } = await params;
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) notFound();

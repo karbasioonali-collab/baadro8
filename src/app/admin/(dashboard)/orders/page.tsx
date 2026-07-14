@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { OrderStatusBadge } from "@/components/panel/OrderStatusBadge";
 import { formatToman } from "@/lib/validation";
 import { ORDER_STATUS_LABELS } from "@/lib/order-status";
+import { requireStaffView } from "@/lib/auth/require-permission";
 import type { OrderStatus, ServiceType } from "@/generated/prisma/enums";
 
 export default async function AdminOrdersPage({
@@ -17,6 +18,7 @@ export default async function AdminOrdersPage({
     q?: string;
   }>;
 }) {
+  await requireStaffView("orders");
   const sp = await searchParams;
 
   const companies = await prisma.company.findMany({

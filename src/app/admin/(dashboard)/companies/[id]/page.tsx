@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentEmployee } from "@/lib/auth/current-staff";
 import { CompanyForm, type CompanyFormValue, emptyCompanyForm } from "@/components/admin/CompanyForm";
 
 export default async function EditCompanyPage({
@@ -7,6 +8,12 @@ export default async function EditCompanyPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const current = await getCurrentEmployee();
+  if (!current) redirect("/admin/login");
+  if (!current.can("companies", "edit") && !current.can("pricing", "edit")) {
+    redirect("/admin/companies");
+  }
+
   const { id } = await params;
 
   const company = await prisma.company.findUnique({

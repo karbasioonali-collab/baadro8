@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentEmployee } from "@/lib/auth/current-staff";
+import { requireStaffView } from "@/lib/auth/require-permission";
 import { OrderStatusBadge } from "@/components/panel/OrderStatusBadge";
 import { AddressCard } from "@/components/panel/AddressCard";
 import { AdminOrderStatusChanger } from "@/components/admin/AdminOrderStatusChanger";
@@ -13,8 +13,7 @@ export default async function AdminOrderDetailPage({
   params: Promise<{ trackingCode: string }>;
 }) {
   const { trackingCode } = await params;
-  const current = await getCurrentEmployee();
-  if (!current) notFound();
+  const current = await requireStaffView("orders");
 
   const order = await prisma.order.findUnique({
     where: { trackingCode },

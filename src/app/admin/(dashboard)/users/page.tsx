@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireStaffView } from "@/lib/auth/require-permission";
 
 export default async function AdminUsersPage() {
+  await requireStaffView("users");
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { orders: true } } },

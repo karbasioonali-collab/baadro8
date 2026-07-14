@@ -3,8 +3,11 @@ import { StatTile } from "@/components/panel/StatTile";
 import { OrdersChart } from "@/components/panel/OrdersChart";
 import { PieBreakdown } from "@/components/panel/PieBreakdown";
 import { getMonthlyBuckets, countByBucket } from "@/lib/monthly-buckets";
+import { requireStaffView } from "@/lib/auth/require-permission";
 
 export default async function AdminDashboardPage() {
+  await requireStaffView("dashboard");
+
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const startOfWeek = new Date(startOfToday);

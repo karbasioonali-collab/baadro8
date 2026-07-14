@@ -14,7 +14,7 @@ const MODULES: { value: EmployeeFormInput["permissions"][number]["module"]; labe
   { value: "orders", label: "سفارش‌ها" },
   { value: "commission_report", label: "گزارش کمیسیون" },
   { value: "users", label: "کاربران" },
-  { value: "employees", label: "کارمندان" },
+  // مدیریت کارمندان همیشه مخصوص «ادمین کامل» است و در این جدول قابل واگذاری نیست
 ];
 
 export type EmployeeFormValue = {

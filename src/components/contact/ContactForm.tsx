@@ -18,7 +18,7 @@ export function ContactForm() {
   useEffect(() => {
     if (state.ok) toast.show("پیام شما با موفقیت ارسال شد", "success");
     else if (state.error) toast.show(state.error, "error");
-  }, [state]);
+  }, [state, toast]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">

@@ -32,6 +32,9 @@ export function CustomerLoginForm({ redirectTo }: { redirectTo: string }) {
   );
 
   useEffect(() => {
+    // این افکت به نتیجه یک Server Action (سیستم خارجی) واکنش نشان می‌دهد،
+    // نه به تغییر props/state داخلی؛ به همین دلیل setState همزمان اینجا لازم است.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (requestState.ok && requestState.mobile) {
       setMobile(requestState.mobile);
       setStep("otp");
@@ -39,7 +42,8 @@ export function CustomerLoginForm({ redirectTo }: { redirectTo: string }) {
     } else if (requestState.error) {
       toast.show(requestState.error, "error");
     }
-  }, [requestState]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [requestState, toast]);
 
   useEffect(() => {
     if (verifyState.ok) {
@@ -49,7 +53,7 @@ export function CustomerLoginForm({ redirectTo }: { redirectTo: string }) {
     } else if (verifyState.error) {
       toast.show(verifyState.error, "error");
     }
-  }, [verifyState]);
+  }, [verifyState, toast, router, redirectTo]);
 
   useEffect(() => {
     if (step !== "otp" || secondsLeft <= 0) return;

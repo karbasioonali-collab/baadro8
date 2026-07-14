@@ -23,7 +23,7 @@ export function ProfileForm({
   useEffect(() => {
     if (state.ok) toast.show("پروفایل با موفقیت به‌روزرسانی شد", "success");
     else if (state.error) toast.show(state.error, "error");
-  }, [state]);
+  }, [state, toast]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4 max-w-sm">

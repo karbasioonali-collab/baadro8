@@ -21,7 +21,7 @@ export function StaffLoginForm() {
     } else if (state.error) {
       toast.show(state.error, "error");
     }
-  }, [state]);
+  }, [state, router, toast]);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">

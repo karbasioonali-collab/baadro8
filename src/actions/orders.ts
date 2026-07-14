@@ -114,7 +114,6 @@ export async function createOrderBatchAction(
 
       let trackingCode = generateTrackingCode();
       // اطمینان از یکتا بودن کد رهگیری
-      // eslint-disable-next-line no-constant-condition
       while (await tx.order.findUnique({ where: { trackingCode } })) {
         trackingCode = generateTrackingCode();
       }

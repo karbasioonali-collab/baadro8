@@ -87,6 +87,9 @@ export function PriceCalculatorForm({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // ریست قیمت تقریبی وقتی ورودی‌ها ناقص می‌شوند، پیش از فراخوانی دیبانس‌شده
+    // به سرور (سیستم خارجی)؛ این افکت برای همگام‌سازی با آن سرویس async است.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (
       parcelType !== "package" ||
       !originCity ||
@@ -97,6 +100,7 @@ export function PriceCalculatorForm({
       setApproxPrice(null);
       return;
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
