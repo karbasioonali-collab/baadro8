@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentEmployee } from "@/lib/auth/current-staff";
-import { CompanyForm, type CompanyFormValue, emptyCompanyForm } from "@/components/admin/CompanyForm";
+import { CompanyForm } from "@/components/admin/CompanyForm";
+import { type CompanyFormValue, emptyCompanyForm } from "@/components/admin/company-form-types";
 
 export default async function EditCompanyPage({
   params,

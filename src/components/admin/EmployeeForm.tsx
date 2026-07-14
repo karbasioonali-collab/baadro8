@@ -6,41 +6,7 @@ import { saveEmployeeAction, type EmployeeFormInput } from "@/actions/admin/empl
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-
-const MODULES: { value: EmployeeFormInput["permissions"][number]["module"]; label: string }[] = [
-  { value: "dashboard", label: "داشبورد" },
-  { value: "companies", label: "شرکت‌ها" },
-  { value: "pricing", label: "فرمول قیمت" },
-  { value: "orders", label: "سفارش‌ها" },
-  { value: "commission_report", label: "گزارش کمیسیون" },
-  { value: "users", label: "کاربران" },
-  // مدیریت کارمندان همیشه مخصوص «ادمین کامل» است و در این جدول قابل واگذاری نیست
-];
-
-export type EmployeeFormValue = {
-  id?: string;
-  name: string;
-  mobile: string;
-  username: string;
-  password: string;
-  isFullAdmin: boolean;
-  active: boolean;
-  permissions: Record<string, { canView: boolean; canEdit: boolean }>;
-};
-
-export function emptyEmployeeForm(): EmployeeFormValue {
-  return {
-    name: "",
-    mobile: "",
-    username: "",
-    password: "",
-    isFullAdmin: false,
-    active: true,
-    permissions: Object.fromEntries(
-      MODULES.map((m) => [m.value, { canView: false, canEdit: false }])
-    ),
-  };
-}
+import { EMPLOYEE_MODULES as MODULES, type EmployeeFormValue } from "./employee-form-types";
 
 export function EmployeeForm({ initial }: { initial: EmployeeFormValue }) {
   const router = useRouter();

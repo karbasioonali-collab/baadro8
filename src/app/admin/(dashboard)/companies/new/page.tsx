@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentEmployee } from "@/lib/auth/current-staff";
-import { CompanyForm, emptyCompanyForm } from "@/components/admin/CompanyForm";
+import { CompanyForm } from "@/components/admin/CompanyForm";
+import { emptyCompanyForm } from "@/components/admin/company-form-types";
 
 export default async function NewCompanyPage() {
   const current = await getCurrentEmployee();
