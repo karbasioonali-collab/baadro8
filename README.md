@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# بادرو
 
-## Getting Started
+پلتفرم مقایسه قیمت و ثبت سفارش ارسال مرسوله (پستی بین‌شهری + پیک درون‌شهری) در ایران.
 
-First, run the development server:
+## استک فنی
+
+- Next.js 16 (App Router, Turbopack) + TypeScript + Tailwind CSS v4
+- PostgreSQL + Prisma ORM 7 (با driver adapter `@prisma/adapter-pg`)
+- احراز هویت: OTP موبایل برای مشتری، یوزر/پسورد برای کارمند و شرکت (JWT با `jose`)
+- نقشه: Leaflet / OpenStreetMap برای انتخاب موقعیت آدرس مبدا
+- نمودار: Recharts
+- PWA: manifest + service worker سفارشی (بدون کتابخانه ثالث)
+
+## راه‌اندازی محیط توسعه
 
 ```bash
+cp .env.example .env   # مقادیر DATABASE_URL و AUTH_SECRET را تنظیم کنید
+npm install
+npx prisma migrate dev # ساخت جداول
+npx prisma db seed     # داده اولیه: شهرها، شرکت‌های نمونه، حساب تستی
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+سایت روی `http://localhost:3000` بالا می‌آید.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### حساب‌های تستی (بعد از seed)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| پنل | آدرس | یوزرنیم | پسورد |
+|---|---|---|---|
+| ادمین | `/admin/login` | `admin` | `badro@admin1404` |
+| شرکت (آزما پست) | `/company/login` | `azma-post` | `azma@1404` |
+| کاربر | `/login` | فقط شماره موبایل (OTP در کنسول سرور چاپ می‌شود، provider = mock) |
 
-## Learn More
+## ساختار پروژه
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/(public)` — صفحات عمومی: صفحه اصلی، نتایج، ثبت سفارش، پیگیری، درباره/تماس
+- `src/app/admin`, `src/app/panel`, `src/app/company` — سه پنل مجزا با Authentication/Authorization جدا
+- `src/lib/pricing` — موتور قیمت‌گذاری (`internal_formula` فعال؛ `external_api` و `page_automation` به‌صورت Interface آماده برای فاز بعد)
+- `src/lib/auth` — session (JWT جدا برای هر نقش)، OTP، RBAC کارمندان
+- `src/actions` — Server Actionها (معادل API برای تمام عملیات نوشتنی)
+- `prisma/schema.prisma` — مدل داده کامل
+- `prisma/seed.ts` — داده اولیه نمونه
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## نکات فاز بعد (خارج از محدوده فعلی)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+طبق سند نیازمندی، موارد زیر در فاز بعد اضافه می‌شوند: نام و فرمول دقیق شرکت‌های واقعی، اتصال `external_api`/`page_automation`، درگاه پرداخت آنلاین، حساب کسب‌وکار، آپلود گروهی سفارش، اپلیکیشن موبایل نیتیو، و اتصال به سرویس پیامک واقعی (کاوه‌نگار/ملی‌پیامک — فقط جایگزینی کلاس `SmsProvider` لازم است).
