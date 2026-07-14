@@ -41,11 +41,14 @@ export function AddressFields({
   onChange,
   showMap = false,
   mapRequired = false,
+  hideLocationSelect = false,
 }: {
   value: AddressFormValue;
   onChange: (v: AddressFormValue) => void;
   showMap?: boolean;
   mapRequired?: boolean;
+  /** وقتی استان/شهر از قبل در مرحله دیگری انتخاب شده و نباید دوباره پرسیده شود */
+  hideLocationSelect?: boolean;
 }) {
   const cities = useMemo(() => getCitiesOfProvince(value.province), [value.province]);
 
@@ -55,36 +58,38 @@ export function AddressFields({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-3">
-        <Select
-          label="استان"
-          value={value.province}
-          onChange={(e) => {
-            set("province", e.target.value);
-            set("city", "");
-          }}
-        >
-          <option value="">انتخاب استان</option>
-          {provinceNames.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </Select>
-        <Select
-          label="شهر"
-          value={value.city}
-          disabled={!value.province}
-          onChange={(e) => set("city", e.target.value)}
-        >
-          <option value="">انتخاب شهر</option>
-          {cities.map((c) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-      </div>
+      {!hideLocationSelect && (
+        <div className="grid grid-cols-2 gap-3">
+          <Select
+            label="استان"
+            value={value.province}
+            onChange={(e) => {
+              set("province", e.target.value);
+              set("city", "");
+            }}
+          >
+            <option value="">انتخاب استان</option>
+            {provinceNames.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="شهر"
+            value={value.city}
+            disabled={!value.province}
+            onChange={(e) => set("city", e.target.value)}
+          >
+            <option value="">انتخاب شهر</option>
+            {cities.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       <Input
         label="خیابان"

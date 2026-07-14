@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { HomeSlider } from "@/components/home/HomeSlider";
-import { PriceCalculatorForm } from "@/components/home/PriceCalculatorForm";
+import { HomeServiceFlow } from "@/components/home/HomeServiceFlow";
 
 export default async function HomePage() {
   const [slides, envelopeTypes] = await Promise.all([
@@ -40,7 +40,7 @@ export default async function HomePage() {
         </p>
       </div>
 
-      <PriceCalculatorForm
+      <HomeServiceFlow
         envelopeTypes={envelopeTypes.map((e) => ({ id: e.id, name: e.name }))}
       />
 
