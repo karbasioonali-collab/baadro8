@@ -20,6 +20,7 @@ type SearchParams = {
   lengthCm?: string;
   widthCm?: string;
   heightCm?: string;
+  declaredValue?: string;
   companyId?: string;
 };
 
@@ -93,6 +94,7 @@ export default async function OrderPage({
       <OrderForm
         companyId={company.id}
         companyName={company.name}
+        serviceType={company.type}
         originProvince={sp.originProvince!}
         originCity={sp.originCity!}
         initial={{
@@ -104,6 +106,7 @@ export default async function OrderPage({
           lengthCm: sp.lengthCm ?? "",
           widthCm: sp.widthCm ?? "",
           heightCm: sp.heightCm ?? "",
+          declaredValue: sp.declaredValue ?? "",
         }}
         envelopeTypes={envelopeTypes.map((e) => ({ id: e.id, name: e.name }))}
         userMobile={user?.mobile ?? session.mobile}

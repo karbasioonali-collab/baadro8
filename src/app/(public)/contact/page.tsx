@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Phone, Mail, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { ContactForm } from "@/components/contact/ContactForm";
 
@@ -17,7 +18,7 @@ export default function ContactPage() {
         <div className="space-y-4">
           <Card className="p-4 flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue-600">
-              ☎
+              <Phone className="size-5" strokeWidth={1.8} />
             </span>
             <div>
               <div className="text-sm text-neutral-500">شماره تماس</div>
@@ -28,7 +29,7 @@ export default function ContactPage() {
           </Card>
           <Card className="p-4 flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-xl bg-brand-green-50 text-brand-green-600">
-              ✉
+              <Mail className="size-5" strokeWidth={1.8} />
             </span>
             <div>
               <div className="text-sm text-neutral-500">ایمیل</div>
@@ -39,7 +40,7 @@ export default function ContactPage() {
           </Card>
           <Card className="p-4 flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600">
-              ⚲
+              <MapPin className="size-5" strokeWidth={1.8} />
             </span>
             <div>
               <div className="text-sm text-neutral-500">آدرس</div>

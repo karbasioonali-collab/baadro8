@@ -17,6 +17,7 @@ type SearchParams = {
   lengthCm?: string;
   widthCm?: string;
   heightCm?: string;
+  declaredValue?: string;
 };
 
 export default async function ResultsPage({
@@ -70,6 +71,7 @@ export default async function ResultsPage({
     ...(sp.lengthCm ? { lengthCm: sp.lengthCm } : {}),
     ...(sp.widthCm ? { widthCm: sp.widthCm } : {}),
     ...(sp.heightCm ? { heightCm: sp.heightCm } : {}),
+    ...(sp.declaredValue ? { declaredValue: sp.declaredValue } : {}),
   }).toString();
 
   return (

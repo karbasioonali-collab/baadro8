@@ -15,6 +15,7 @@ const parcelSchema = z.object({
   lengthCm: z.number().int().min(1).max(200).optional(),
   widthCm: z.number().int().min(1).max(200).optional(),
   heightCm: z.number().int().min(1).max(200).optional(),
+  declaredValue: z.number().min(0).optional(),
   itemNote: z.string().max(200).optional(),
 });
 
@@ -59,18 +60,20 @@ export async function createOrderBatchAction(
     if (parcel.parcelType === "envelope" && !parcel.envelopeTypeId) {
       return { ok: false, error: "لطفاً نوع پاکت را برای همه مرسوله‌ها انتخاب کنید" };
     }
-    if (
-      parcel.parcelType === "package" &&
-      (!parcel.weightKg || !parcel.lengthCm || !parcel.widthCm || !parcel.heightCm)
-    ) {
-      return { ok: false, error: "لطفاً وزن و ابعاد بسته را کامل وارد کنید" };
-    }
     const serviceType = detectServiceType(origin.city, parcel.destination.city);
     if (serviceType !== company.type) {
       return {
         ok: false,
         error: "مسیر یکی از مرسوله‌ها با نوع سرویس شرکت انتخاب‌شده سازگار نیست",
       };
+    }
+    // پیک موتوری (intracity) وزن/ابعاد نمی‌گیرد؛ قیمتش فقط بر اساس فاصله است
+    if (
+      serviceType !== "intracity" &&
+      parcel.parcelType === "package" &&
+      (!parcel.weightKg || !parcel.lengthCm || !parcel.widthCm || !parcel.heightCm)
+    ) {
+      return { ok: false, error: "لطفاً وزن و ابعاد بسته را کامل وارد کنید" };
     }
   }
 
@@ -139,6 +142,7 @@ export async function createOrderBatchAction(
           lengthCm: parcel.lengthCm ?? null,
           widthCm: parcel.widthCm ?? null,
           heightCm: parcel.heightCm ?? null,
+          declaredValue: parcel.declaredValue ?? null,
           itemNote: parcel.itemNote || null,
           calculatedPrice: price,
           commissionAmount,

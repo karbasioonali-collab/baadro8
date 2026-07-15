@@ -2,6 +2,7 @@
 
 import { AddressFields, type AddressFormValue } from "./AddressFields";
 import { Select } from "@/components/ui/Select";
+import { Input } from "@/components/ui/Input";
 
 export type ParcelFormValue = {
   key: string;
@@ -12,6 +13,7 @@ export type ParcelFormValue = {
   lengthCm: string;
   widthCm: string;
   heightCm: string;
+  declaredValue: string;
   itemNote: string;
 };
 
@@ -19,6 +21,7 @@ export function ParcelRow({
   index,
   value,
   envelopeTypes,
+  needsWeight = true,
   onChange,
   onRemove,
   removable,
@@ -26,6 +29,8 @@ export function ParcelRow({
   index: number;
   value: ParcelFormValue;
   envelopeTypes: { id: string; name: string }[];
+  /** پیک موتوری (intracity) وزن/ابعاد نمی‌گیرد */
+  needsWeight?: boolean;
   onChange: (v: ParcelFormValue) => void;
   onRemove: () => void;
   removable: boolean;
@@ -78,7 +83,7 @@ export function ParcelRow({
               </option>
             ))}
           </Select>
-        ) : (
+        ) : needsWeight ? (
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-neutral-700">وزن (کیلوگرم)</label>
             <input
@@ -88,13 +93,22 @@ export function ParcelRow({
               max={50}
               value={value.weightKg}
               onChange={(e) => onChange({ ...value, weightKg: e.target.value })}
-              className="h-11 rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+              className="h-11 rounded-xl border border-brand-green-300 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
             />
           </div>
+        ) : (
+          <Input
+            label="ارزش مرسوله (تومان، اختیاری)"
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={value.declaredValue}
+            onChange={(e) => onChange({ ...value, declaredValue: e.target.value })}
+          />
         )}
       </div>
 
-      {value.parcelType === "package" && (
+      {value.parcelType === "package" && needsWeight && (
         <div className="mt-3 grid grid-cols-3 gap-3">
           {(["lengthCm", "widthCm", "heightCm"] as const).map((k, i) => (
             <div key={k} className="flex flex-col gap-1.5">
@@ -107,10 +121,23 @@ export function ParcelRow({
                 max={200}
                 value={value[k]}
                 onChange={(e) => onChange({ ...value, [k]: e.target.value })}
-                className="h-11 rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+                className="h-11 rounded-xl border border-brand-green-300 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
               />
             </div>
           ))}
+        </div>
+      )}
+
+      {(value.parcelType === "envelope" || needsWeight) && (
+        <div className="mt-3">
+          <Input
+            label="ارزش مرسوله (تومان، اختیاری)"
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={value.declaredValue}
+            onChange={(e) => onChange({ ...value, declaredValue: e.target.value })}
+          />
         </div>
       )}
 
@@ -121,7 +148,7 @@ export function ParcelRow({
           onChange={(e) => onChange({ ...value, itemNote: e.target.value })}
           maxLength={200}
           rows={2}
-          className="rounded-xl border border-neutral-200 bg-white p-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+          className="rounded-xl border border-brand-green-300 bg-white p-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
         />
       </div>
     </div>

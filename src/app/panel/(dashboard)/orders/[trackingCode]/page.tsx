@@ -59,6 +59,9 @@ export default async function PanelOrderDetailPage({
               ابعاد: {order.lengthCm} × {order.widthCm} × {order.heightCm} سانتی‌متر
             </div>
           )}
+          {order.declaredValue && (
+            <div>ارزش اظهارشده: {Number(order.declaredValue).toLocaleString("fa-IR")} تومان</div>
+          )}
           {order.itemNote && <div>توضیحات: {order.itemNote}</div>}
         </div>
       </div>

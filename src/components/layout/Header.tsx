@@ -8,6 +8,7 @@ const navItems = [
   { href: "/about", label: "درباره ما" },
   { href: "/contact", label: "تماس با ما" },
   { href: "/tracking", label: "پیگیری مرسوله" },
+  { href: "/rules", label: "قوانین و مقررات" },
 ];
 
 export async function Header() {
@@ -15,9 +16,9 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/85 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="shrink-0">
-          <Logo size="sm" />
+          <Logo size="md" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">

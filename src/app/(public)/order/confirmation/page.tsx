@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -34,8 +35,8 @@ export default async function OrderConfirmationPage({
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-14">
       <div className="text-center mb-8">
-        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-brand-green-100 text-3xl text-brand-green-600">
-          ✓
+        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-brand-green-100 text-brand-green-600">
+          <Check className="size-8" strokeWidth={2.2} />
         </div>
         <h1 className="text-2xl font-bold text-neutral-900">
           سفارش شما با موفقیت ثبت شد

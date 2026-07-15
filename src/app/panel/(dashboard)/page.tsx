@@ -1,3 +1,4 @@
+import { Calendar, CalendarDays, Package } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCustomerSession } from "@/lib/auth/session";
 import { OrdersChart } from "@/components/panel/OrdersChart";
@@ -31,9 +32,9 @@ export default async function PanelOverviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile label="سفارش امروز" value={String(todayCount)} icon="📅" />
-        <StatTile label="سفارش این ماه" value={String(monthCount)} icon="🗓" />
-        <StatTile label="مجموع سفارش‌ها" value={String(totalCount)} icon="📦" />
+        <StatTile label="سفارش امروز" value={String(todayCount)} icon={Calendar} />
+        <StatTile label="سفارش این ماه" value={String(monthCount)} icon={CalendarDays} />
+        <StatTile label="مجموع سفارش‌ها" value={String(totalCount)} icon={Package} />
       </div>
 
       <div className="rounded-2xl border border-neutral-200 bg-white p-5">

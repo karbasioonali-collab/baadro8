@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
+import { Bike, Mail } from "lucide-react";
 import { IRAN_PROVINCES, getCitiesOfProvince, findProvinceForCity } from "@/lib/iran-locations";
 import { AddressFields, emptyAddress, type AddressFormValue } from "@/components/order/AddressFields";
 import { Select } from "@/components/ui/Select";
-import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { StepShell, NextButton } from "./StepShell";
 import { ParcelDetailsStep, type ParcelDetailsValue, emptyParcelDetails } from "./ParcelDetailsStep";
@@ -86,13 +86,13 @@ export function HomeServiceFlow({
   const [icOrigin, setIcOrigin] = useState<AddressFormValue>(emptyAddress());
   const [icDestination, setIcDestination] = useState<AddressFormValue>(emptyAddress());
 
-  // ارسال پستی (بین‌شهری): مبدا با نقشه، مقصد فقط شهر/آدرس متنی
+  // ارسال پستی (بین‌شهری): مبدا با نقشه، مقصد بدون نقشه ولی با فیلدهای جدا
   const [ieOriginProvince, setIeOriginProvince] = useState("");
   const [ieOriginCity, setIeOriginCity] = useState("");
   const [ieOrigin, setIeOrigin] = useState<AddressFormValue>(emptyAddress());
   const [ieDestProvince, setIeDestProvince] = useState("");
   const [ieDestCity, setIeDestCity] = useState("");
-  const [ieDestText, setIeDestText] = useState("");
+  const [ieDestination, setIeDestination] = useState<AddressFormValue>(emptyAddress());
 
   const [parcel, setParcel] = useState<ParcelDetailsValue>(emptyParcelDetails());
 
@@ -107,11 +107,13 @@ export function HomeServiceFlow({
   }
 
   function submit() {
+    const needsWeight = serviceType !== "intracity";
+
     if (parcel.parcelType === "envelope" && !parcel.envelopeTypeId) {
       toast.show("لطفاً نوع پاکت را انتخاب کنید", "error");
       return;
     }
-    if (parcel.parcelType === "package") {
+    if (parcel.parcelType === "package" && needsWeight) {
       if (!parcel.weightKg || Number(parcel.weightKg) < 0.1 || Number(parcel.weightKg) > 50) {
         toast.show("وزن بسته نمی‌تواند بیشتر از ۵۰ کیلوگرم باشد", "error");
         return;
@@ -135,12 +137,13 @@ export function HomeServiceFlow({
       parcelType: parcel.parcelType,
     });
     if (parcel.parcelType === "envelope") params.set("envelopeTypeId", parcel.envelopeTypeId);
-    if (parcel.parcelType === "package") {
+    if (parcel.parcelType === "package" && needsWeight) {
       params.set("weightKg", parcel.weightKg);
       params.set("lengthCm", parcel.lengthCm);
       params.set("widthCm", parcel.widthCm);
       params.set("heightCm", parcel.heightCm);
     }
+    if (parcel.declaredValue) params.set("declaredValue", parcel.declaredValue);
 
     router.push(`/results?${params.toString()}`);
   }
@@ -166,24 +169,24 @@ export function HomeServiceFlow({
               type="button"
               onClick={() => chooseService("intracity")}
               className={clsx(
-                "flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-3xl border-2 p-8 sm:p-10 transition-colors",
+                "flex min-h-[260px] sm:min-h-[300px] flex-col items-center justify-center gap-5 rounded-3xl border-2 p-10 sm:p-14 transition-colors",
                 "border-neutral-200 hover:border-brand-blue-400 hover:bg-brand-blue-50"
               )}
             >
-              <span className="text-7xl">🏍️</span>
-              <span className="text-xl font-bold text-neutral-800">پیک موتوری</span>
+              <Bike className="size-16 sm:size-20 text-brand-blue-500" strokeWidth={1.5} />
+              <span className="text-2xl font-bold text-neutral-800">پیک موتوری</span>
               <span className="text-base text-neutral-500">ارسال درون‌شهری، همان روز</span>
             </button>
             <button
               type="button"
               onClick={() => chooseService("intercity")}
               className={clsx(
-                "flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-3xl border-2 p-8 sm:p-10 transition-colors",
+                "flex min-h-[260px] sm:min-h-[300px] flex-col items-center justify-center gap-5 rounded-3xl border-2 p-10 sm:p-14 transition-colors",
                 "border-neutral-200 hover:border-brand-green-400 hover:bg-brand-green-50"
               )}
             >
-              <span className="text-7xl">📮</span>
-              <span className="text-xl font-bold text-neutral-800">ارسال پستی</span>
+              <Mail className="size-16 sm:size-20 text-brand-green-600" strokeWidth={1.5} />
+              <span className="text-2xl font-bold text-neutral-800">ارسال پستی</span>
               <span className="text-base text-neutral-500">ارسال بین‌شهری به سراسر ایران</span>
             </button>
           </div>
@@ -317,14 +320,22 @@ export function HomeServiceFlow({
             onChangeCity={setIeDestCity}
           />
           <div className="mt-3">
-            <Input
-              label="آدرس مقصد (اختیاری)"
-              value={ieDestText}
-              onChange={(e) => setIeDestText(e.target.value)}
-              placeholder="مثلا خیابان، کوچه، پلاک گیرنده"
+            <AddressFields
+              value={{ ...ieDestination, province: ieDestProvince, city: ieDestCity }}
+              onChange={setIeDestination}
+              hideLocationSelect
+              requireAlley
             />
           </div>
-          <NextButton disabled={!ieDestCity} onClick={() => setStep("parcel")} />
+          <NextButton
+            disabled={
+              !ieDestCity ||
+              ieDestination.street.trim().length < 3 ||
+              !ieDestination.alley.trim() ||
+              !ieDestination.plaque.trim()
+            }
+            onClick={() => setStep("parcel")}
+          />
         </StepShell>
       )}
 
@@ -341,6 +352,7 @@ export function HomeServiceFlow({
             value={parcel}
             onChange={setParcel}
             envelopeTypes={envelopeTypes}
+            serviceType={serviceType ?? "intercity"}
             originProvince={serviceType === "intracity" ? icProvince : ieOriginProvince}
             originCity={serviceType === "intracity" ? icCity : ieOriginCity}
             destinationProvince={serviceType === "intracity" ? icProvince : ieDestProvince}

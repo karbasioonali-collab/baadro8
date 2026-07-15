@@ -1,3 +1,4 @@
+import { CreditCard } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCustomerSession } from "@/lib/auth/session";
 import { StatTile } from "@/components/panel/StatTile";
@@ -21,7 +22,7 @@ export default async function PanelPaymentsPage() {
         صفحه صرفاً برای شفافیت، جمع مبلغ سفارش‌های ثبت‌شده شما را نمایش می‌دهد.
       </div>
 
-      <StatTile label="جمع کل مبلغ سفارش‌ها" value={formatToman(total)} icon="💳" />
+      <StatTile label="جمع کل مبلغ سفارش‌ها" value={formatToman(total)} icon={CreditCard} />
 
       <div className="overflow-x-auto rounded-2xl border border-neutral-200 bg-white">
         <table className="w-full text-sm">

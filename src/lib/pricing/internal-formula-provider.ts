@@ -65,10 +65,14 @@ export class InternalFormulaProvider implements PriceProvider {
     const envelopeModifier =
       input.parcelType === "envelope" ? input.envelopePriceModifier ?? 0 : 0;
 
+    // پیک موتوری (درون‌شهری) بدون وزن/ابعاد از کاربر گرفته می‌شود، پس قیمت
+    // آن فقط بر اساس هزینه پایه و فاصله محاسبه می‌شود، بدون جزء وزنی.
+    const isIntracity = input.serviceType === "intracity";
+
     if (rule.ruleType === "formula") {
       const params = rule.formulaParams as unknown as FormulaParams;
       const basePrice = params.basePrice;
-      const weightCost = effectiveWeight * params.pricePerKg;
+      const weightCost = isIntracity ? 0 : effectiveWeight * params.pricePerKg;
       const distanceCost = distanceKm * params.pricePerKm;
       const price = Math.round(
         basePrice + weightCost + distanceCost + envelopeModifier

@@ -42,6 +42,7 @@ export function AddressFields({
   showMap = false,
   mapRequired = false,
   hideLocationSelect = false,
+  requireAlley = false,
 }: {
   value: AddressFormValue;
   onChange: (v: AddressFormValue) => void;
@@ -49,6 +50,8 @@ export function AddressFields({
   mapRequired?: boolean;
   /** وقتی استان/شهر از قبل در مرحله دیگری انتخاب شده و نباید دوباره پرسیده شود */
   hideLocationSelect?: boolean;
+  /** کوچه را اجباری نمایش بده (پیش‌فرض اختیاری است) */
+  requireAlley?: boolean;
 }) {
   const cities = useMemo(() => getCitiesOfProvince(value.province), [value.province]);
 
@@ -57,7 +60,7 @@ export function AddressFields({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-blue-300 p-3.5 sm:p-4">
       {!hideLocationSelect && (
         <div className="grid grid-cols-2 gap-3">
           <Select
@@ -98,7 +101,7 @@ export function AddressFields({
         placeholder="نام خیابان اصلی"
       />
       <Input
-        label="کوچه (اختیاری)"
+        label={requireAlley ? "کوچه" : "کوچه (اختیاری)"}
         value={value.alley}
         onChange={(e) => set("alley", e.target.value)}
       />
@@ -133,7 +136,7 @@ export function AddressFields({
           onChange={(e) => set("description", e.target.value)}
           maxLength={200}
           rows={2}
-          className="rounded-xl border border-neutral-200 bg-white p-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+          className="rounded-xl border border-brand-green-300 bg-white p-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
         />
       </div>
 

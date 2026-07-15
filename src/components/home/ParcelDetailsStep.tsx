@@ -12,6 +12,7 @@ export type ParcelDetailsValue = {
   lengthCm: string;
   widthCm: string;
   heightCm: string;
+  declaredValue: string;
 };
 
 export function emptyParcelDetails(): ParcelDetailsValue {
@@ -22,6 +23,7 @@ export function emptyParcelDetails(): ParcelDetailsValue {
     lengthCm: "",
     widthCm: "",
     heightCm: "",
+    declaredValue: "",
   };
 }
 
@@ -29,6 +31,7 @@ export function ParcelDetailsStep({
   value,
   onChange,
   envelopeTypes,
+  serviceType,
   originProvince,
   originCity,
   destinationProvince,
@@ -37,11 +40,14 @@ export function ParcelDetailsStep({
   value: ParcelDetailsValue;
   onChange: (v: ParcelDetailsValue) => void;
   envelopeTypes: { id: string; name: string }[];
+  /** پیک موتوری (intracity) وزن/ابعاد نمی‌گیرد؛ قیمتش فقط بر اساس فاصله است */
+  serviceType: "intracity" | "intercity";
   originProvince: string;
   originCity: string;
   destinationProvince: string;
   destinationCity: string;
 }) {
+  const needsWeight = serviceType !== "intracity";
   const [, startTransition] = useTransition();
   const [approxPrice, setApproxPrice] = useState<number | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,13 +58,8 @@ export function ParcelDetailsStep({
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
-    if (
-      value.parcelType !== "package" ||
-      !originCity ||
-      !destinationCity ||
-      !value.weightKg ||
-      Number(value.weightKg) <= 0
-    ) {
+    const weightOk = !needsWeight || (!!value.weightKg && Number(value.weightKg) > 0);
+    if (value.parcelType !== "package" || !originCity || !destinationCity || !weightOk) {
       setApproxPrice(null);
       return;
     }
@@ -73,7 +74,7 @@ export function ParcelDetailsStep({
           destinationProvince,
           destinationCity,
           parcelType: "package",
-          weightKg: Number(value.weightKg),
+          weightKg: needsWeight ? Number(value.weightKg) : undefined,
         });
         setApproxPrice(price);
       });
@@ -82,7 +83,15 @@ export function ParcelDetailsStep({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [value.parcelType, value.weightKg, originCity, destinationCity, originProvince, destinationProvince]);
+  }, [
+    value.parcelType,
+    value.weightKg,
+    needsWeight,
+    originCity,
+    destinationCity,
+    originProvince,
+    destinationProvince,
+  ]);
 
   return (
     <div>
@@ -152,7 +161,7 @@ export function ParcelDetailsStep({
         </div>
       )}
 
-      {value.parcelType === "package" && (
+      {value.parcelType === "package" && needsWeight && (
         <div className="mt-4 rounded-2xl bg-neutral-50 border border-neutral-200 p-4 animate-in fade-in slide-in-from-top-1">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="flex flex-col gap-1.5">
@@ -164,7 +173,7 @@ export function ParcelDetailsStep({
                 max={50}
                 value={value.weightKg}
                 onChange={(e) => set("weightKg", e.target.value)}
-                className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+                className="h-11 rounded-xl border border-brand-green-300 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
                 placeholder="مثلا 2.5"
               />
             </div>
@@ -176,7 +185,7 @@ export function ParcelDetailsStep({
                 max={200}
                 value={value.lengthCm}
                 onChange={(e) => set("lengthCm", e.target.value)}
-                className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+                className="h-11 rounded-xl border border-brand-green-300 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -187,7 +196,7 @@ export function ParcelDetailsStep({
                 max={200}
                 value={value.widthCm}
                 onChange={(e) => set("widthCm", e.target.value)}
-                className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+                className="h-11 rounded-xl border border-brand-green-300 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -198,7 +207,7 @@ export function ParcelDetailsStep({
                 max={200}
                 value={value.heightCm}
                 onChange={(e) => set("heightCm", e.target.value)}
-                className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+                className="h-11 rounded-xl border border-brand-green-300 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
               />
             </div>
           </div>
@@ -215,6 +224,21 @@ export function ParcelDetailsStep({
           )}
         </div>
       )}
+
+      <div className="mt-4 flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-neutral-700">
+          ارزش مرسوله (تومان، اختیاری)
+        </label>
+        <input
+          type="number"
+          min={0}
+          inputMode="numeric"
+          value={value.declaredValue}
+          onChange={(e) => set("declaredValue", e.target.value)}
+          placeholder="برای اطلاع/بیمه مرسوله در صورت خسارت"
+          className="h-11 rounded-xl border border-brand-green-300 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+        />
+      </div>
     </div>
   );
 }

@@ -38,7 +38,7 @@ export function TrackingGrid({ companies }: { companies: CompanyItem[] }) {
               "flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-colors",
               selected?.id === c.id
                 ? "border-brand-blue-400 bg-brand-blue-50"
-                : "border-neutral-200 bg-white hover:border-neutral-300"
+                : "border-brand-green-300 bg-white hover:border-brand-green-400"
             )}
           >
             <div className="flex size-12 items-center justify-center rounded-xl bg-neutral-100 font-bold text-neutral-500 overflow-hidden">
@@ -67,7 +67,7 @@ export function TrackingGrid({ companies }: { companies: CompanyItem[] }) {
               onChange={(e) => setCode(e.target.value)}
               placeholder="کد رهگیری"
               dir="ltr"
-              className="h-11 flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
+              className="h-11 flex-1 rounded-xl border border-brand-green-300 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
             />
             <Button onClick={handleSubmit} loading={pending}>
               پیگیری

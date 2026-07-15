@@ -6,7 +6,10 @@ import { clsx } from "clsx";
 import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 
-export type PanelNavItem = { href: string; label: string; icon?: string };
+// توجه: icon باید یک عنصر رندرشده (JSX) باشد، نه ارجاع به خودِ کامپوننت —
+// چون PanelShell کلاینت‌کامپوننت است و ارجاع تابع/کامپوننت را نمی‌توان از
+// سرورکامپوننت‌های والد (لایوت‌های admin/panel/company) به آن پاس داد.
+export type PanelNavItem = { href: string; label: string; icon?: React.ReactNode };
 
 export function PanelShell({
   navItems,
@@ -43,7 +46,7 @@ export function PanelShell({
                 : "text-neutral-600 hover:bg-neutral-100"
             )}
           >
-            {item.icon && <span>{item.icon}</span>}
+            {item.icon}
             {item.label}
           </Link>
         );

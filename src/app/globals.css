@@ -8,29 +8,29 @@
   --background: #ffffff;
   --foreground: #1f2a24;
 
-  /* رنگ اصلی برند — آبی بیبی: حس اطمینان و آرامش */
-  --color-brand-blue-50: #f1f9fd;
-  --color-brand-blue-100: #dcf0fa;
-  --color-brand-blue-200: #b9e1f5;
-  --color-brand-blue-300: #a8d8f0;
-  --color-brand-blue-400: #7bc3e8;
-  --color-brand-blue-500: #4ba9db;
-  --color-brand-blue-600: #2f8bc0;
-  --color-brand-blue-700: #276e9a;
-  --color-brand-blue-800: #235c7f;
-  --color-brand-blue-900: #1f4c69;
+  /* رنگ اصلی برند — آبی بیبی، نسخه شارپ‌تر و پرکنتراست‌تر: حس اطمینان و آرامش */
+  --color-brand-blue-50: #eef8fd;
+  --color-brand-blue-100: #d2edfa;
+  --color-brand-blue-200: #a0dbf4;
+  --color-brand-blue-300: #74c8ec;
+  --color-brand-blue-400: #3fabdc;
+  --color-brand-blue-500: #1487c2;
+  --color-brand-blue-600: #0e6ba0;
+  --color-brand-blue-700: #0c5480;
+  --color-brand-blue-800: #0e4568;
+  --color-brand-blue-900: #0f3a56;
 
-  /* رنگ ثانویه برند — سبز کاهویی: حس حمل‌ونقل هوشمند و محیط‌زیستی */
-  --color-brand-green-50: #f6faee;
-  --color-brand-green-100: #e9f3d5;
-  --color-brand-green-200: #d3e7ae;
-  --color-brand-green-300: #a8c86a;
-  --color-brand-green-400: #93bb4f;
-  --color-brand-green-500: #7ba33c;
-  --color-brand-green-600: #62822f;
-  --color-brand-green-700: #4d6627;
-  --color-brand-green-800: #405423;
-  --color-brand-green-900: #37481f;
+  /* رنگ ثانویه برند — سبز کاهویی، نسخه شارپ‌تر و پرکنتراست‌تر: حس حمل‌ونقل هوشمند و محیط‌زیستی */
+  --color-brand-green-50: #f4f9e8;
+  --color-brand-green-100: #e2f0c4;
+  --color-brand-green-200: #c7e28d;
+  --color-brand-green-300: #a0cf4f;
+  --color-brand-green-400: #82b62f;
+  --color-brand-green-500: #689722;
+  --color-brand-green-600: #52781c;
+  --color-brand-green-700: #426019;
+  --color-brand-green-800: #384f1a;
+  --color-brand-green-900: #30431a;
 
   --color-neutral-50: #fafaf9;
   --color-neutral-100: #f4f4f3;
@@ -101,8 +101,12 @@ body {
   font-family: var(--font-sans);
 }
 
-* {
-  border-color: var(--color-neutral-200);
+/* باید داخل layer base باشد وگرنه به‌عنوان استایل بدون لایه، هر رنگ border-*
+   دیگری را که Tailwind در layer utilities تولید می‌کند override می‌کند */
+@layer base {
+  * {
+    border-color: var(--color-neutral-200);
+  }
 }
 
 /* اسکرول‌بار مینیمال */

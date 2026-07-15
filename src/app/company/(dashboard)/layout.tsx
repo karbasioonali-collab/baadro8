@@ -1,10 +1,17 @@
 import { redirect } from "next/navigation";
+import { Package } from "lucide-react";
 import { getCompanySession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { PanelShell } from "@/components/panel/PanelShell";
 import { logoutCompanyAction } from "@/actions/auth";
 
-const navItems = [{ href: "/company", label: "سفارش‌های ارجاعی", icon: "📦" }];
+const navItems = [
+  {
+    href: "/company",
+    label: "سفارش‌های ارجاعی",
+    icon: <Package className="size-[18px] shrink-0" strokeWidth={1.8} />,
+  },
+];
 
 export default async function CompanyDashboardLayout({
   children,

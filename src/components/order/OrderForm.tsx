@@ -23,7 +23,8 @@ function makeParcel(
   weightKg: string,
   lengthCm: string,
   widthCm: string,
-  heightCm: string
+  heightCm: string,
+  declaredValue: string
 ): ParcelFormValue {
   return {
     key: newKey(),
@@ -34,6 +35,7 @@ function makeParcel(
     lengthCm,
     widthCm,
     heightCm,
+    declaredValue,
     itemNote: "",
   };
 }
@@ -41,6 +43,7 @@ function makeParcel(
 export function OrderForm({
   companyId,
   companyName,
+  serviceType,
   originProvince,
   originCity,
   initial,
@@ -49,6 +52,8 @@ export function OrderForm({
 }: {
   companyId: string;
   companyName: string;
+  /** پیک موتوری (intracity) وزن/ابعاد نمی‌گیرد؛ قیمتش فقط بر اساس فاصله است */
+  serviceType: "intracity" | "intercity";
   originProvince: string;
   originCity: string;
   initial: {
@@ -60,6 +65,7 @@ export function OrderForm({
     lengthCm: string;
     widthCm: string;
     heightCm: string;
+    declaredValue: string;
   };
   envelopeTypes: { id: string; name: string }[];
   userMobile: string;
@@ -67,6 +73,7 @@ export function OrderForm({
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
+  const needsWeight = serviceType !== "intracity";
 
   const [senderName, setSenderName] = useState("");
   const [origin, setOrigin] = useState<AddressFormValue>(
@@ -81,7 +88,8 @@ export function OrderForm({
       initial.weightKg,
       initial.lengthCm,
       initial.widthCm,
-      initial.heightCm
+      initial.heightCm,
+      initial.declaredValue
     ),
   ]);
 
@@ -92,6 +100,7 @@ export function OrderForm({
         initial.destinationProvince,
         initial.destinationCity,
         "package",
+        "",
         "",
         "",
         "",
@@ -129,6 +138,7 @@ export function OrderForm({
         return;
       }
       if (
+        needsWeight &&
         p.parcelType === "package" &&
         (!p.weightKg || !p.lengthCm || !p.widthCm || !p.heightCm)
       ) {
@@ -172,6 +182,7 @@ export function OrderForm({
           lengthCm: p.lengthCm ? Number(p.lengthCm) : undefined,
           widthCm: p.widthCm ? Number(p.widthCm) : undefined,
           heightCm: p.heightCm ? Number(p.heightCm) : undefined,
+          declaredValue: p.declaredValue ? Number(p.declaredValue) : undefined,
           itemNote: p.itemNote || undefined,
         })),
       });
@@ -213,6 +224,7 @@ export function OrderForm({
           index={idx}
           value={p}
           envelopeTypes={envelopeTypes}
+          needsWeight={needsWeight}
           onChange={(v) => updateParcel(p.key, v)}
           onRemove={() => removeParcel(p.key)}
           removable={parcels.length > 1}

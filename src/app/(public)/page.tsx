@@ -1,3 +1,4 @@
+import { Zap, HandCoins, LocateFixed, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { HomeSlider } from "@/components/home/HomeSlider";
 import { HomeServiceFlow } from "@/components/home/HomeServiceFlow";
@@ -54,17 +55,17 @@ export default async function HomePage() {
 
       <div className="mt-16 grid gap-6 sm:grid-cols-3">
         <FeatureCard
-          icon="⚡"
+          icon={Zap}
           title="مقایسه سریع"
           desc="در چند ثانیه قیمت چندین شرکت پستی و پیک را مقایسه کنید."
         />
         <FeatureCard
-          icon="✓"
+          icon={HandCoins}
           title="بدون پرداخت آنلاین"
-          desc="سفارش را ثبت کنید و تسویه را مستقیم با شرکت انجام دهید."
+          desc="سفارش را آنلاین ثبت کنید و تسویه‌حساب را در مبدا یا مقصد انجام دهید"
         />
         <FeatureCard
-          icon="⌖"
+          icon={LocateFixed}
           title="پیگیری آسان"
           desc="وضعیت مرسوله خود را در هر لحظه با کد رهگیری پیگیری کنید."
         />
@@ -73,11 +74,19 @@ export default async function HomePage() {
   );
 }
 
-function FeatureCard({ icon, title, desc }: { icon: string; title: string; desc: string }) {
+function FeatureCard({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+}) {
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-5 text-center">
-      <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-blue-50 text-lg text-brand-blue-600">
-        {icon}
+      <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue-600">
+        <Icon className="size-5" strokeWidth={1.8} />
       </div>
       <h3 className="font-semibold text-neutral-800">{title}</h3>
       <p className="mt-1.5 text-sm text-neutral-500 leading-6">{desc}</p>

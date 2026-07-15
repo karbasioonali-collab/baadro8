@@ -22,7 +22,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           className={clsx(
             "h-11 rounded-xl border bg-white px-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none transition-colors",
             "focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100",
-            error ? "border-danger" : "border-neutral-200",
+            error ? "border-danger" : "border-brand-green-300",
             className
           )}
           {...props}
