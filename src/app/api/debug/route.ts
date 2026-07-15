@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { Client } from "pg";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 /**
  * صفحه تشخیصی موقت برای عیب‌یابی مشکلات اتصال به دیتابیس در دیپلوی.
  * هیچ رمز عبور یا اطلاعات محرمانه‌ای برنمی‌گرداند — فقط ساختار مقدار
- * DATABASE_URL و نتیجه یک تلاش واقعی برای اتصال را نشان می‌دهد.
- * بعد از حل مشکل دیپلوی، این فایل باید حذف شود.
+ * DATABASE_URL، نتیجه یک تلاش واقعی برای اتصال خام، و نتیجه اجرای همان
+ * کوئری‌های Prisma که صفحه اصلی استفاده می‌کند را نشان می‌دهد (تا مشخص شود
+ * migrate/seed واقعاً کامل شده‌اند یا نه). بعد از حل مشکل دیپلوی، این فایل
+ * باید حذف شود.
  */
 export async function GET() {
   const raw = process.env.DATABASE_URL;
@@ -52,10 +55,38 @@ export async function GET() {
     }
   }
 
+  let prismaSchemaTest: Record<string, unknown> = { attempted: false };
+  if (trimmed) {
+    prismaSchemaTest = { attempted: true };
+    try {
+      const [slideCount, envelopeTypeCount, companyCount, coveredCityCount] =
+        await Promise.all([
+          prisma.homepageSlide.count(),
+          prisma.envelopeType.count(),
+          prisma.company.count(),
+          prisma.coveredCity.count(),
+        ]);
+      prismaSchemaTest = {
+        attempted: true,
+        ok: true,
+        counts: { slideCount, envelopeTypeCount, companyCount, coveredCityCount },
+      };
+    } catch (err) {
+      const e = err as { code?: string; message?: string };
+      prismaSchemaTest = {
+        attempted: true,
+        ok: false,
+        errorCode: e.code ?? null,
+        errorMessage: e.message ?? String(err),
+      };
+    }
+  }
+
   return NextResponse.json({
     nodeEnv: process.env.NODE_ENV,
     databaseUrl: shape,
     connectionTest,
+    prismaSchemaTest,
   });
 }
 
