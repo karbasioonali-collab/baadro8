@@ -38,26 +38,35 @@ async function seedEnvelopeTypes() {
 }
 
 async function seedHomepageSlides() {
-  console.log("در حال ثبت اسلایدهای صفحه اصلی...");
-  const existing = await prisma.homepageSlide.count();
-  if (existing > 0) return;
+  console.log("در حال ثبت/به‌روزرسانی اسلایدهای صفحه اصلی...");
 
-  await prisma.homepageSlide.createMany({
-    data: [
-      {
-        imageUrl: "/slides/slide-1-intro.png",
-        title: "ارسال مرسوله، ساده و مطمئن",
-        description: "قیمت چند شرکت پستی و پیک را در چند ثانیه مقایسه کنید",
-        orderIndex: 0,
-      },
-      {
-        imageUrl: "/icons/icon-512.png",
-        title: "بدون پرداخت آنلاین",
-        description: "سفارش را ثبت کنید، تسویه مستقیم با شرکت انجام می‌شود",
-        orderIndex: 1,
-      },
-    ],
-  });
+  // توجه: از upsert بر اساس عنوان استفاده می‌شود (نه فقط create وقتی جدول
+  // خالیه) تا وقتی تصویر یک اسلاید در این فایل عوض می‌شود، همان ردیف موجود
+  // در دیتابیس‌های از قبل seed‌شده (مثل production) هم روی هر دیپلوی جدید
+  // به‌روز شود، نه اینکه به‌خاطر خالی نبودن جدول کلاً نادیده گرفته شود.
+  const slides = [
+    {
+      imageUrl: "/slides/slide-1-intro.png",
+      title: "ارسال مرسوله، ساده و مطمئن",
+      description: "قیمت چند شرکت پستی و پیک را در چند ثانیه مقایسه کنید",
+      orderIndex: 0,
+    },
+    {
+      imageUrl: "/icons/icon-512.png",
+      title: "بدون پرداخت آنلاین",
+      description: "سفارش را ثبت کنید، تسویه مستقیم با شرکت انجام می‌شود",
+      orderIndex: 1,
+    },
+  ];
+
+  for (const slide of slides) {
+    const existing = await prisma.homepageSlide.findFirst({ where: { title: slide.title } });
+    if (existing) {
+      await prisma.homepageSlide.update({ where: { id: existing.id }, data: slide });
+    } else {
+      await prisma.homepageSlide.create({ data: slide });
+    }
+  }
 }
 
 async function seedCompanies() {

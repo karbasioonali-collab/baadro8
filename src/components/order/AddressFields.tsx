@@ -66,10 +66,7 @@ export function AddressFields({
           <Select
             label="استان"
             value={value.province}
-            onChange={(e) => {
-              set("province", e.target.value);
-              set("city", "");
-            }}
+            onChange={(e) => onChange({ ...value, province: e.target.value, city: "" })}
           >
             <option value="">انتخاب استان</option>
             {provinceNames.map((p) => (

@@ -62,7 +62,6 @@ type Step =
   | "ic-city"
   | "ic-origin"
   | "ic-destination"
-  | "ie-origin-city"
   | "ie-origin-address"
   | "ie-destination"
   | "parcel";
@@ -86,9 +85,7 @@ export function HomeServiceFlow({
   const [icOrigin, setIcOrigin] = useState<AddressFormValue>(emptyAddress());
   const [icDestination, setIcDestination] = useState<AddressFormValue>(emptyAddress());
 
-  // ارسال پستی (بین‌شهری): مبدا با نقشه، مقصد بدون نقشه ولی با فیلدهای جدا
-  const [ieOriginProvince, setIeOriginProvince] = useState("");
-  const [ieOriginCity, setIeOriginCity] = useState("");
+  // ارسال پستی (بین‌شهری): مبدا (استان/شهر + آدرس + نقشه در یک باکس واحد)، مقصد بدون نقشه ولی با فیلدهای جدا
   const [ieOrigin, setIeOrigin] = useState<AddressFormValue>(emptyAddress());
   const [ieDestProvince, setIeDestProvince] = useState("");
   const [ieDestCity, setIeDestCity] = useState("");
@@ -98,7 +95,7 @@ export function HomeServiceFlow({
 
   function chooseService(type: ServiceType) {
     setServiceType(type);
-    setStep(type === "intracity" ? "ic-city" : "ie-origin-city");
+    setStep(type === "intracity" ? "ic-city" : "ie-origin-address");
   }
 
   function chooseIntracityCity(cityName: string) {
@@ -124,8 +121,8 @@ export function HomeServiceFlow({
       }
     }
 
-    const originProvince = serviceType === "intracity" ? icProvince : ieOriginProvince;
-    const originCity = serviceType === "intracity" ? icCity : ieOriginCity;
+    const originProvince = serviceType === "intracity" ? icProvince : ieOrigin.province;
+    const originCity = serviceType === "intracity" ? icCity : ieOrigin.city;
     const destinationProvince = serviceType === "intracity" ? icProvince : ieDestProvince;
     const destinationCity = serviceType === "intracity" ? icCity : ieDestCity;
 
@@ -154,9 +151,8 @@ export function HomeServiceFlow({
     "ic-city": 1,
     "ic-origin": 2,
     "ic-destination": 3,
-    "ie-origin-city": 1,
-    "ie-origin-address": 2,
-    "ie-destination": 3,
+    "ie-origin-address": 1,
+    "ie-destination": 2,
     parcel: 3,
   };
 
@@ -260,43 +256,18 @@ export function HomeServiceFlow({
         </StepShell>
       )}
 
-      {step === "ie-origin-city" && (
+      {step === "ie-origin-address" && (
         <StepShell
-          title="شهر مبدا را انتخاب کنید"
+          title="استان، شهر و آدرس مبدا (محل تحویل بسته)"
           stepIndex={stepIndexMap[step]}
           totalSteps={totalSteps}
           onBack={() => setStep("service")}
         >
-          <CityPicker
-            title=""
-            province={ieOriginProvince}
-            city={ieOriginCity}
-            onChangeProvince={(v) => {
-              setIeOriginProvince(v);
-              setIeOriginCity("");
-            }}
-            onChangeCity={setIeOriginCity}
-          />
-          <NextButton disabled={!ieOriginCity} onClick={() => setStep("ie-origin-address")} />
-        </StepShell>
-      )}
-
-      {step === "ie-origin-address" && (
-        <StepShell
-          title="آدرس مبدا (محل تحویل بسته)"
-          stepIndex={stepIndexMap[step]}
-          totalSteps={totalSteps}
-          onBack={() => setStep("ie-origin-city")}
-        >
-          <AddressFields
-            value={{ ...ieOrigin, province: ieOriginProvince, city: ieOriginCity }}
-            onChange={setIeOrigin}
-            hideLocationSelect
-            showMap
-            mapRequired
-          />
+          <AddressFields value={ieOrigin} onChange={setIeOrigin} showMap mapRequired />
           <NextButton
-            disabled={ieOrigin.street.trim().length < 3 || !ieOrigin.plaque.trim()}
+            disabled={
+              !ieOrigin.city || ieOrigin.street.trim().length < 3 || !ieOrigin.plaque.trim()
+            }
             onClick={() => setStep("ie-destination")}
           />
         </StepShell>
@@ -353,8 +324,8 @@ export function HomeServiceFlow({
             onChange={setParcel}
             envelopeTypes={envelopeTypes}
             serviceType={serviceType ?? "intercity"}
-            originProvince={serviceType === "intracity" ? icProvince : ieOriginProvince}
-            originCity={serviceType === "intracity" ? icCity : ieOriginCity}
+            originProvince={serviceType === "intracity" ? icProvince : ieOrigin.province}
+            originCity={serviceType === "intracity" ? icCity : ieOrigin.city}
             destinationProvince={serviceType === "intracity" ? icProvince : ieDestProvince}
             destinationCity={serviceType === "intracity" ? icCity : ieDestCity}
           />
