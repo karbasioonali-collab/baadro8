@@ -45,7 +45,7 @@ async function seedHomepageSlides() {
   await prisma.homepageSlide.createMany({
     data: [
       {
-        imageUrl: "/icons/icon-512.png",
+        imageUrl: "/slides/slide-1-intro.png",
         title: "ارسال مرسوله، ساده و مطمئن",
         description: "قیمت چند شرکت پستی و پیک را در چند ثانیه مقایسه کنید",
         orderIndex: 0,

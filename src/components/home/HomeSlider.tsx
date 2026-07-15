@@ -45,7 +45,15 @@ export function HomeSlider({ slides }: { slides: Slide[] }) {
                 backgroundBlendMode: "overlay",
               }}
             >
-              <div className="max-w-lg text-white" dir="rtl">
+              {/* اسکریم تیره برای خوانا ماندن متن روی هر تصویر پس‌زمینه‌ای، حتی تصاویر شلوغ */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0.15) 55%, transparent 80%)",
+                }}
+              />
+              <div className="relative max-w-lg text-white" dir="rtl">
                 <h2 className="text-xl sm:text-3xl font-bold drop-shadow-sm">
                   {slide.title}
                 </h2>
