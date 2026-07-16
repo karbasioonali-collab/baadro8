@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { formatToman } from "@/lib/validation";
 import { requireStaffView } from "@/lib/auth/require-permission";
+import { getDailyBuckets, sumAmountByBucket } from "@/lib/daily-buckets";
+import { AmountLineChart } from "@/components/panel/AmountLineChart";
 
 function monthRange(monthStr: string | undefined) {
   const now = new Date();
@@ -48,6 +50,16 @@ export default async function CommissionReportPage({
   const rows = Array.from(byCompany.values()).sort((a, b) => b.totalCommission - a.totalCommission);
   const totalCommission = rows.reduce((s, r) => s + r.totalCommission, 0);
 
+  const buckets = getDailyBuckets(start, end);
+  const salesByDay = sumAmountByBucket(
+    orders.map((o) => ({ date: o.createdAt, amount: Number(o.calculatedPrice) })),
+    buckets
+  );
+  const commissionByDay = sumAmountByBucket(
+    orders.map((o) => ({ date: o.createdAt, amount: Number(o.commissionAmount) })),
+    buckets
+  );
+
   return (
     <div>
       <form className="mb-4 flex items-center gap-2" method="GET">
@@ -70,6 +82,17 @@ export default async function CommissionReportPage({
 
       <div className="mb-4 rounded-2xl border border-brand-blue-200 bg-brand-blue-50 p-4 text-sm text-brand-blue-800">
         جمع کل کمیسیون ماه انتخاب‌شده: <b>{formatToman(totalCommission)}</b>
+      </div>
+
+      <div className="mb-4 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h3 className="font-semibold text-neutral-800 mb-4">نمودار فروش بر حسب تاریخ</h3>
+          <AmountLineChart data={salesByDay} name="فروش" color="#1487c2" />
+        </div>
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h3 className="font-semibold text-neutral-800 mb-4">نمودار کمیسیون بر حسب تاریخ</h3>
+          <AmountLineChart data={commissionByDay} name="کمیسیون" color="#689722" />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-neutral-200 bg-white">

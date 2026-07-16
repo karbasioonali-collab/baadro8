@@ -48,7 +48,7 @@ export async function updateCompanyOrderStatusAction(
     ORDER_STATUS_LABELS[newStatus]
   );
 
-  revalidatePath("/company/orders");
+  revalidatePath("/company");
   revalidatePath(`/company/orders/${order.trackingCode}`);
 
   return { ok: true };

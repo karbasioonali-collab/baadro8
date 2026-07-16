@@ -17,8 +17,11 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/85 backdrop-blur">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="shrink-0">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <Logo size="md" />
+          <span className="text-[20px] font-medium text-neutral-500 whitespace-nowrap">
+            سریع‌تر و ارزون‌تر بفرست
+          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
