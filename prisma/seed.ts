@@ -40,9 +40,9 @@ async function seedEnvelopeTypes() {
 async function seedHomepageSlides() {
   console.log("در حال ثبت/به‌روزرسانی اسلایدهای صفحه اصلی...");
 
-  // توجه: از upsert بر اساس عنوان استفاده می‌شود (نه فقط create وقتی جدول
-  // خالیه) تا وقتی تصویر یک اسلاید در این فایل عوض می‌شود، همان ردیف موجود
-  // در دیتابیس‌های از قبل seed‌شده (مثل production) هم روی هر دیپلوی جدید
+  // توجه: upsert بر اساس orderIndex انجام می‌شود (نه عنوان، چون عنوان هم ممکن
+  // است در همین فایل عوض شود) تا با هر تغییر تصویر/متن یک اسلاید، همان ردیف
+  // موجود در دیتابیس‌های از قبل seed‌شده (مثل production) روی هر دیپلوی جدید
   // به‌روز شود، نه اینکه به‌خاطر خالی نبودن جدول کلاً نادیده گرفته شود.
   const slides = [
     {
@@ -52,15 +52,21 @@ async function seedHomepageSlides() {
       orderIndex: 0,
     },
     {
-      imageUrl: "/icons/icon-512.png",
-      title: "بدون پرداخت آنلاین",
-      description: "سفارش را ثبت کنید، تسویه مستقیم با شرکت انجام می‌شود",
+      imageUrl: "/slides/slide-2-price.png",
+      title: "مقایسه قیمت در چند ثانیه",
+      description: "ارزان‌ترین گزینه بین چندین شرکت پستی و پیک را پیدا کنید",
       orderIndex: 1,
+    },
+    {
+      imageUrl: "/slides/slide-3-postal-flight.png",
+      title: "ارسال بین‌شهری به سراسر ایران",
+      description: "با شبکه‌ای از شرکت‌های پستی و باربری معتبر، مرسوله شما به هر نقطه از ایران می‌رسد",
+      orderIndex: 2,
     },
   ];
 
   for (const slide of slides) {
-    const existing = await prisma.homepageSlide.findFirst({ where: { title: slide.title } });
+    const existing = await prisma.homepageSlide.findFirst({ where: { orderIndex: slide.orderIndex } });
     if (existing) {
       await prisma.homepageSlide.update({ where: { id: existing.id }, data: slide });
     } else {
