@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { Bike, Mail } from "lucide-react";
@@ -8,6 +8,7 @@ import { IRAN_PROVINCES, getCitiesOfProvince, findProvinceForCity } from "@/lib/
 import { AddressFields, emptyAddress, type AddressFormValue } from "@/components/order/AddressFields";
 import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/Toast";
+import { HOME_WIZARD_RESET_EVENT } from "@/lib/home-wizard-reset";
 import { StepShell, NextButton } from "./StepShell";
 import { ParcelDetailsStep, type ParcelDetailsValue, emptyParcelDetails } from "./ParcelDetailsStep";
 
@@ -92,6 +93,25 @@ export function HomeServiceFlow({
   const [ieDestination, setIeDestination] = useState<AddressFormValue>(emptyAddress());
 
   const [parcel, setParcel] = useState<ParcelDetailsValue>(emptyParcelDetails());
+
+  useEffect(() => {
+    function resetWizard() {
+      setServiceType(null);
+      setStep("service");
+      setIcProvince("");
+      setIcCity("");
+      setIcOrigin(emptyAddress());
+      setIcDestination(emptyAddress());
+      setIeOrigin(emptyAddress());
+      setIeDestProvince("");
+      setIeDestCity("");
+      setIeDestination(emptyAddress());
+      setParcel(emptyParcelDetails());
+    }
+
+    window.addEventListener(HOME_WIZARD_RESET_EVENT, resetWizard);
+    return () => window.removeEventListener(HOME_WIZARD_RESET_EVENT, resetWizard);
+  }, []);
 
   function chooseService(type: ServiceType) {
     setServiceType(type);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { getCustomerSession } from "@/lib/auth/session";
 import { HeaderMobileMenu } from "./HeaderMobileMenu";
+import { HomeNavLink } from "./HomeNavLink";
 
 const navItems = [
   { href: "/", label: "صفحه اصلی" },
@@ -25,15 +26,22 @@ export async function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg px-3.5 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const linkClassName =
+              "rounded-lg px-3.5 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors";
+            if (item.href === "/") {
+              return (
+                <HomeNavLink key={item.href} className={linkClassName}>
+                  {item.label}
+                </HomeNavLink>
+              );
+            }
+            return (
+              <Link key={item.href} href={item.href} className={linkClassName}>
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-2">

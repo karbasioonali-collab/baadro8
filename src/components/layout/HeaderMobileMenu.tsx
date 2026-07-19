@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { HomeNavLink } from "./HomeNavLink";
 
 export function HeaderMobileMenu({
   items,
@@ -32,16 +33,31 @@ export function HeaderMobileMenu({
       {open && (
         <div className="absolute inset-x-0 top-16 z-40 border-b border-neutral-200 bg-white p-4 shadow-lg">
           <nav className="flex flex-col gap-1">
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3.5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {items.map((item) => {
+              const linkClassName =
+                "rounded-lg px-3.5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100";
+              if (item.href === "/") {
+                return (
+                  <HomeNavLink
+                    key={item.href}
+                    className={linkClassName}
+                    onNavigate={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </HomeNavLink>
+                );
+              }
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={linkClassName}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
             <Link
               href={isLoggedIn ? "/panel" : "/login"}
               onClick={() => setOpen(false)}
