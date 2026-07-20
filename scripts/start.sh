@@ -15,5 +15,15 @@ if ! npx prisma db seed; then
   echo "!! prisma db seed شکست خورد (معمولاً چون جدول‌ها هنوز ساخته نشده‌اند)."
 fi
 
-echo "==> در حال بالا آوردن Next.js ..."
-exec npx next start
+echo "==> در حال کپی فایل‌های استاتیک برای standalone build ..."
+# output: standalone در next.config.ts فقط سرور و node_modules لازم را
+# می‌سازد، نه public/ و .next/static را — طبق مستندات خودِ Next.js باید
+# این دو را دستی کنار سرور استندالون بگذاریم، وگرنه سایت بدون CSS/JS/عکس
+# بالا می‌آید. rm قبلش برای idempotent بودن (اگر start.sh دوباره روی همان
+# container اجرا شود، مثلاً بعد از ری‌استارت).
+rm -rf .next/standalone/public .next/standalone/.next/static
+cp -r public .next/standalone/public
+cp -r .next/static .next/standalone/.next/static
+
+echo "==> در حال بالا آوردن Next.js (standalone) ..."
+exec node .next/standalone/server.js
