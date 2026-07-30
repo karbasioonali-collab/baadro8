@@ -1,7 +1,9 @@
+import { KavenegarSmsProvider } from "./kavenegar-provider";
+
 /**
  * لایه انتزاعی ارسال پیامک — هم برای OTP و هم برای اعلان تغییر وضعیت سفارش استفاده می‌شود.
- * برای اتصال به یک provider واقعی (کاوه‌نگار، ملی‌پیامک و ...) کافی است یک کلاس جدید
- * پیاده‌سازی SmsProvider نوشته و در getSmsProvider جایگزین شود.
+ * برای اتصال به یک provider واقعی جدید کافی است یک کلاس جدید پیاده‌سازی SmsProvider
+ * نوشته و در getSmsProvider جایگزین شود.
  */
 export interface SmsProvider {
   send(mobile: string, text: string): Promise<{ success: boolean }>;
@@ -23,7 +25,9 @@ export function getSmsProvider(): SmsProvider {
   const providerName = process.env.SMS_PROVIDER ?? "mock";
 
   switch (providerName) {
-    // در آینده: case "kavenegar": return new KavenegarSmsProvider();
+    case "kavenegar":
+      cachedProvider = new KavenegarSmsProvider();
+      break;
     // در آینده: case "melipayamak": return new MelipayamakSmsProvider();
     default:
       cachedProvider = new MockSmsProvider();
