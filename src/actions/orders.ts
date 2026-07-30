@@ -11,7 +11,7 @@ const parcelSchema = z.object({
   destination: addressSchema,
   parcelType: z.enum(["envelope", "package"]),
   envelopeTypeId: z.string().optional(),
-  weightKg: z.number().min(0.1).max(50).optional(),
+  weightGrams: z.number().min(100).max(50000).optional(),
   lengthCm: z.number().int().min(1).max(200).optional(),
   widthCm: z.number().int().min(1).max(200).optional(),
   heightCm: z.number().int().min(1).max(200).optional(),
@@ -71,7 +71,7 @@ export async function createOrderBatchAction(
     if (
       serviceType !== "intracity" &&
       parcel.parcelType === "package" &&
-      (!parcel.weightKg || !parcel.lengthCm || !parcel.widthCm || !parcel.heightCm)
+      (!parcel.weightGrams || !parcel.lengthCm || !parcel.widthCm || !parcel.heightCm)
     ) {
       return { ok: false, error: "لطفاً وزن و ابعاد بسته را کامل وارد کنید" };
     }
@@ -85,7 +85,7 @@ export async function createOrderBatchAction(
         destinationProvince: parcel.destination.province,
         destinationCity: parcel.destination.city,
         parcelType: parcel.parcelType,
-        weightKg: parcel.weightKg,
+        weightGrams: parcel.weightGrams,
         envelopeTypeId: parcel.envelopeTypeId,
       })
     )
@@ -138,7 +138,7 @@ export async function createOrderBatchAction(
           destinationAddressId: destinationAddress.id,
           parcelType: parcel.parcelType,
           envelopeTypeId: parcel.envelopeTypeId || null,
-          weightKg: parcel.weightKg ?? null,
+          weightGrams: parcel.weightGrams ?? null,
           lengthCm: parcel.lengthCm ?? null,
           widthCm: parcel.widthCm ?? null,
           heightCm: parcel.heightCm ?? null,

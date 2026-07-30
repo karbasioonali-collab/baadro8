@@ -9,7 +9,7 @@ export type ParcelFormValue = {
   destination: AddressFormValue;
   parcelType: "envelope" | "package";
   envelopeTypeId: string;
-  weightKg: string;
+  weightGrams: string;
   lengthCm: string;
   widthCm: string;
   heightCm: string;
@@ -22,6 +22,7 @@ export function ParcelRow({
   value,
   envelopeTypes,
   needsWeight = true,
+  destinationMapRequired = false,
   onChange,
   onRemove,
   removable,
@@ -31,6 +32,8 @@ export function ParcelRow({
   envelopeTypes: { id: string; name: string }[];
   /** پیک موتوری (intracity) وزن/ابعاد نمی‌گیرد */
   needsWeight?: boolean;
+  /** پیک موتوری: انتخاب موقعیت گیرنده روی نقشه اجباری است؛ ارسال پستی: اختیاری */
+  destinationMapRequired?: boolean;
   onChange: (v: ParcelFormValue) => void;
   onRemove: () => void;
   removable: boolean;
@@ -55,6 +58,8 @@ export function ParcelRow({
         <AddressFields
           value={value.destination}
           onChange={(destination) => onChange({ ...value, destination })}
+          showMap
+          mapRequired={destinationMapRequired}
         />
       </div>
 
@@ -85,14 +90,14 @@ export function ParcelRow({
           </Select>
         ) : needsWeight ? (
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-neutral-700">وزن (کیلوگرم)</label>
+            <label className="text-sm font-medium text-neutral-700">وزن (گرم)</label>
             <input
               type="number"
-              step="0.1"
-              min={0.1}
-              max={50}
-              value={value.weightKg}
-              onChange={(e) => onChange({ ...value, weightKg: e.target.value })}
+              step="10"
+              min={100}
+              max={50000}
+              value={value.weightGrams}
+              onChange={(e) => onChange({ ...value, weightGrams: e.target.value })}
               className="h-11 rounded-xl border border-brand-green-300 bg-white px-3.5 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
             />
           </div>

@@ -58,9 +58,15 @@ export class InternalFormulaProvider implements PriceProvider {
       input.destinationCity
     );
 
-    // وزن مؤثر: پاکت‌ها وزن سبک استاندارد فرض می‌شوند
+    // وزن مؤثر بر حسب کیلوگرم: ورودی مشتری (weightGrams) بر حسب گرم است، ولی
+    // تعرفه‌های ادمین (pricePerKg، weightTiers) بر مبنای کیلوگرم تعریف شده‌اند،
+    // پس تبدیل فقط همین‌جا انجام می‌شود. پاکت‌ها وزن سبک استاندارد فرض می‌شوند.
     const effectiveWeight =
-      input.parcelType === "envelope" ? 0.5 : input.weightKg ?? 0.5;
+      input.parcelType === "envelope"
+        ? 0.5
+        : input.weightGrams != null
+          ? input.weightGrams / 1000
+          : 0.5;
 
     const envelopeModifier =
       input.parcelType === "envelope" ? input.envelopePriceModifier ?? 0 : 0;

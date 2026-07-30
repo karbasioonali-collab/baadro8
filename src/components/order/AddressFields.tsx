@@ -34,6 +34,18 @@ export function emptyAddress(province = "", city = ""): AddressFormValue {
   };
 }
 
+/** فقط تایپ حروف فارسی در فیلدهای متنی آدرس مجاز است؛ حروف انگلیسی هنگام تایپ حذف می‌شوند. */
+function stripEnglishLetters(text: string): string {
+  return text.replace(/[A-Za-z]/g, "");
+}
+
+/** برای چک نهایی قبل از رفتن به مرحله بعد/ثبت نهایی — مثلاً وقتی متن با paste وارد شده باشد. */
+export function addressHasEnglishLetters(address: AddressFormValue): boolean {
+  return [address.street, address.alley, address.plaque, address.floor, address.description].some(
+    (v) => /[A-Za-z]/.test(v)
+  );
+}
+
 const provinceNames = IRAN_PROVINCES.map((p) => p.name);
 
 export function AddressFields({
@@ -94,25 +106,25 @@ export function AddressFields({
       <Input
         label="خیابان"
         value={value.street}
-        onChange={(e) => set("street", e.target.value)}
+        onChange={(e) => set("street", stripEnglishLetters(e.target.value))}
         placeholder="نام خیابان اصلی"
       />
       <Input
         label={requireAlley ? "کوچه" : "کوچه (اختیاری)"}
         value={value.alley}
-        onChange={(e) => set("alley", e.target.value)}
+        onChange={(e) => set("alley", stripEnglishLetters(e.target.value))}
       />
 
       <div className="grid grid-cols-3 gap-3">
         <Input
           label="پلاک"
           value={value.plaque}
-          onChange={(e) => set("plaque", e.target.value)}
+          onChange={(e) => set("plaque", stripEnglishLetters(e.target.value))}
         />
         <Input
           label="طبقه (اختیاری)"
           value={value.floor}
-          onChange={(e) => set("floor", e.target.value)}
+          onChange={(e) => set("floor", stripEnglishLetters(e.target.value))}
         />
         <Input
           label="کد پستی (اختیاری)"
@@ -130,7 +142,7 @@ export function AddressFields({
         </label>
         <textarea
           value={value.description}
-          onChange={(e) => set("description", e.target.value)}
+          onChange={(e) => set("description", stripEnglishLetters(e.target.value))}
           maxLength={200}
           rows={2}
           className="rounded-xl border border-brand-green-300 bg-white p-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"

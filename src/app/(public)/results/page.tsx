@@ -13,7 +13,7 @@ type SearchParams = {
   destinationCity?: string;
   parcelType?: "envelope" | "package";
   envelopeTypeId?: string;
-  weightKg?: string;
+  weightGrams?: string;
   lengthCm?: string;
   widthCm?: string;
   heightCm?: string;
@@ -53,7 +53,7 @@ export default async function ResultsPage({
     destinationProvince: sp.destinationProvince!,
     destinationCity: sp.destinationCity!,
     parcelType: sp.parcelType!,
-    weightKg: sp.weightKg ? Number(sp.weightKg) : undefined,
+    weightGrams: sp.weightGrams ? Number(sp.weightGrams) : undefined,
     envelopeTypeId: sp.envelopeTypeId,
   });
 
@@ -67,7 +67,7 @@ export default async function ResultsPage({
     destinationCity: sp.destinationCity!,
     parcelType: sp.parcelType!,
     ...(sp.envelopeTypeId ? { envelopeTypeId: sp.envelopeTypeId } : {}),
-    ...(sp.weightKg ? { weightKg: sp.weightKg } : {}),
+    ...(sp.weightGrams ? { weightGrams: sp.weightGrams } : {}),
     ...(sp.lengthCm ? { lengthCm: sp.lengthCm } : {}),
     ...(sp.widthCm ? { widthCm: sp.widthCm } : {}),
     ...(sp.heightCm ? { heightCm: sp.heightCm } : {}),

@@ -344,7 +344,7 @@ model Order {
   envelopeTypeId String?
   envelopeType   EnvelopeType? @relation(fields: [envelopeTypeId], references: [id])
 
-  weightKg    Decimal? @db.Decimal(6, 2)
+  weightGrams Int?
   lengthCm    Int?
   widthCm     Int?
   heightCm    Int?

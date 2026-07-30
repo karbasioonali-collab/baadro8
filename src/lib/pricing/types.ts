@@ -22,7 +22,7 @@ export type PriceQuoteInput = {
   originCity: string;
   destinationCity: string;
   parcelType: "envelope" | "package";
-  weightKg?: number;
+  weightGrams?: number;
   envelopePriceModifier?: number;
 };
 

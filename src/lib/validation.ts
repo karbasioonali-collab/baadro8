@@ -61,10 +61,10 @@ export const addressSchema = z.object({
 });
 
 export const packageSchema = z.object({
-  weightKg: z
+  weightGrams: z
     .number({ message: "وزن الزامی است" })
-    .min(0.1, "وزن باید حداقل ۰.۱ کیلوگرم باشد")
-    .max(50, "وزن بسته نمی‌تواند بیشتر از ۵۰ کیلوگرم باشد"),
+    .min(100, "وزن باید حداقل ۱۰۰ گرم باشد")
+    .max(50000, "وزن بسته نمی‌تواند بیشتر از ۵۰ کیلوگرم باشد"),
   lengthCm: z.number().int().min(1).max(200),
   widthCm: z.number().int().min(1).max(200),
   heightCm: z.number().int().min(1).max(200),

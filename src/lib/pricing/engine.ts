@@ -23,7 +23,7 @@ export type QuoteRequest = {
   destinationProvince: string;
   destinationCity: string;
   parcelType: "envelope" | "package";
-  weightKg?: number;
+  weightGrams?: number;
   envelopeTypeId?: string;
 };
 
@@ -72,7 +72,7 @@ export async function getQuotesForRequest(
         originCity: req.originCity,
         destinationCity: req.destinationCity,
         parcelType: req.parcelType,
-        weightKg: req.weightKg,
+        weightGrams: req.weightGrams,
         envelopePriceModifier,
       });
 
@@ -114,7 +114,7 @@ export async function getQuoteForCompany(
     originCity: req.originCity,
     destinationCity: req.destinationCity,
     parcelType: req.parcelType,
-    weightKg: req.weightKg,
+    weightGrams: req.weightGrams,
     envelopePriceModifier,
   });
 

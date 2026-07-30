@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { Bike, Mail } from "lucide-react";
 import { IRAN_PROVINCES, getCitiesOfProvince, findProvinceForCity } from "@/lib/iran-locations";
-import { AddressFields, emptyAddress, type AddressFormValue } from "@/components/order/AddressFields";
+import {
+  AddressFields,
+  addressHasEnglishLetters,
+  emptyAddress,
+  type AddressFormValue,
+} from "@/components/order/AddressFields";
 import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/Toast";
 import { HOME_WIZARD_RESET_EVENT } from "@/lib/home-wizard-reset";
@@ -86,7 +91,7 @@ export function HomeServiceFlow({
   const [icOrigin, setIcOrigin] = useState<AddressFormValue>(emptyAddress());
   const [icDestination, setIcDestination] = useState<AddressFormValue>(emptyAddress());
 
-  // ارسال پستی (بین‌شهری): مبدا (استان/شهر + آدرس + نقشه در یک باکس واحد)، مقصد بدون نقشه ولی با فیلدهای جدا
+  // ارسال پستی (بین‌شهری): مبدا (استان/شهر + آدرس + نقشه اجباری در یک باکس واحد)، مقصد با فیلدهای جدا و نقشه اختیاری
   const [ieOrigin, setIeOrigin] = useState<AddressFormValue>(emptyAddress());
   const [ieDestProvince, setIeDestProvince] = useState("");
   const [ieDestCity, setIeDestCity] = useState("");
@@ -113,6 +118,20 @@ export function HomeServiceFlow({
     return () => window.removeEventListener(HOME_WIZARD_RESET_EVENT, resetWizard);
   }, []);
 
+  // با رفتن به هر مرحله جدید (چه با «بعدی» چه با بازگشت)، صفحه باید از بالا نمایش داده شود
+  // نه از همان نقطه‌ای که کاربر قبلاً اسکرول کرده بود.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
+  function nextIfPersian(address: AddressFormValue, next: Step) {
+    if (addressHasEnglishLetters(address)) {
+      toast.show("لطفا فارسی تایپ کنید", "error");
+      return;
+    }
+    setStep(next);
+  }
+
   function chooseService(type: ServiceType) {
     setServiceType(type);
     setStep(type === "intracity" ? "ic-city" : "ie-origin-address");
@@ -131,8 +150,12 @@ export function HomeServiceFlow({
       return;
     }
     if (parcel.parcelType === "package" && needsWeight) {
-      if (!parcel.weightKg || Number(parcel.weightKg) < 0.1 || Number(parcel.weightKg) > 50) {
-        toast.show("وزن بسته نمی‌تواند بیشتر از ۵۰ کیلوگرم باشد", "error");
+      if (
+        !parcel.weightGrams ||
+        Number(parcel.weightGrams) < 100 ||
+        Number(parcel.weightGrams) > 50000
+      ) {
+        toast.show("وزن بسته باید بین ۱۰۰ گرم تا ۵۰ کیلوگرم باشد", "error");
         return;
       }
       if (!parcel.lengthCm || !parcel.widthCm || !parcel.heightCm) {
@@ -155,7 +178,7 @@ export function HomeServiceFlow({
     });
     if (parcel.parcelType === "envelope") params.set("envelopeTypeId", parcel.envelopeTypeId);
     if (parcel.parcelType === "package" && needsWeight) {
-      params.set("weightKg", parcel.weightKg);
+      params.set("weightGrams", parcel.weightGrams);
       params.set("lengthCm", parcel.lengthCm);
       params.set("widthCm", parcel.widthCm);
       params.set("heightCm", parcel.heightCm);
@@ -249,8 +272,12 @@ export function HomeServiceFlow({
             mapRequired
           />
           <NextButton
-            disabled={icOrigin.street.trim().length < 3 || !icOrigin.plaque.trim()}
-            onClick={() => setStep("ic-destination")}
+            disabled={
+              icOrigin.street.trim().length < 3 ||
+              !icOrigin.plaque.trim() ||
+              icOrigin.lat == null
+            }
+            onClick={() => nextIfPersian(icOrigin, "ic-destination")}
           />
         </StepShell>
       )}
@@ -270,8 +297,12 @@ export function HomeServiceFlow({
             mapRequired
           />
           <NextButton
-            disabled={icDestination.street.trim().length < 3 || !icDestination.plaque.trim()}
-            onClick={() => setStep("parcel")}
+            disabled={
+              icDestination.street.trim().length < 3 ||
+              !icDestination.plaque.trim() ||
+              icDestination.lat == null
+            }
+            onClick={() => nextIfPersian(icDestination, "parcel")}
           />
         </StepShell>
       )}
@@ -286,9 +317,12 @@ export function HomeServiceFlow({
           <AddressFields value={ieOrigin} onChange={setIeOrigin} showMap mapRequired />
           <NextButton
             disabled={
-              !ieOrigin.city || ieOrigin.street.trim().length < 3 || !ieOrigin.plaque.trim()
+              !ieOrigin.city ||
+              ieOrigin.street.trim().length < 3 ||
+              !ieOrigin.plaque.trim() ||
+              ieOrigin.lat == null
             }
-            onClick={() => setStep("ie-destination")}
+            onClick={() => nextIfPersian(ieOrigin, "ie-destination")}
           />
         </StepShell>
       )}
@@ -316,6 +350,7 @@ export function HomeServiceFlow({
               onChange={setIeDestination}
               hideLocationSelect
               requireAlley
+              showMap
             />
           </div>
           <NextButton
@@ -325,7 +360,7 @@ export function HomeServiceFlow({
               !ieDestination.alley.trim() ||
               !ieDestination.plaque.trim()
             }
-            onClick={() => setStep("parcel")}
+            onClick={() => nextIfPersian(ieDestination, "parcel")}
           />
         </StepShell>
       )}

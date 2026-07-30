@@ -8,7 +8,7 @@ import { formatToman } from "@/lib/validation";
 export type ParcelDetailsValue = {
   parcelType: "envelope" | "package";
   envelopeTypeId: string;
-  weightKg: string;
+  weightGrams: string;
   lengthCm: string;
   widthCm: string;
   heightCm: string;
@@ -19,7 +19,7 @@ export function emptyParcelDetails(): ParcelDetailsValue {
   return {
     parcelType: "package",
     envelopeTypeId: "",
-    weightKg: "",
+    weightGrams: "",
     lengthCm: "",
     widthCm: "",
     heightCm: "",
@@ -58,7 +58,7 @@ export function ParcelDetailsStep({
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
-    const weightOk = !needsWeight || (!!value.weightKg && Number(value.weightKg) > 0);
+    const weightOk = !needsWeight || (!!value.weightGrams && Number(value.weightGrams) > 0);
     if (value.parcelType !== "package" || !originCity || !destinationCity || !weightOk) {
       setApproxPrice(null);
       return;
@@ -74,7 +74,7 @@ export function ParcelDetailsStep({
           destinationProvince,
           destinationCity,
           parcelType: "package",
-          weightKg: needsWeight ? Number(value.weightKg) : undefined,
+          weightGrams: needsWeight ? Number(value.weightGrams) : undefined,
         });
         setApproxPrice(price);
       });
@@ -85,7 +85,7 @@ export function ParcelDetailsStep({
     };
   }, [
     value.parcelType,
-    value.weightKg,
+    value.weightGrams,
     needsWeight,
     originCity,
     destinationCity,
@@ -165,16 +165,16 @@ export function ParcelDetailsStep({
         <div className="mt-4 rounded-2xl bg-neutral-50 border border-neutral-200 p-4 animate-in fade-in slide-in-from-top-1">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-neutral-700">وزن (کیلوگرم)</label>
+              <label className="text-sm font-medium text-neutral-700">وزن (گرم)</label>
               <input
                 type="number"
-                step="0.1"
-                min={0.1}
-                max={50}
-                value={value.weightKg}
-                onChange={(e) => set("weightKg", e.target.value)}
+                step="10"
+                min={100}
+                max={50000}
+                value={value.weightGrams}
+                onChange={(e) => set("weightGrams", e.target.value)}
                 className="h-11 rounded-xl border border-brand-green-300 bg-white px-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
-                placeholder="مثلا 2.5"
+                placeholder="مثلا 2500"
               />
             </div>
             <div className="flex flex-col gap-1.5">

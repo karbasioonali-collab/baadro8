@@ -1,9 +1,12 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useCallback, useMemo } from "react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import { LocateFixed } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 const pinIcon = L.divIcon({
   className: "",
@@ -23,6 +26,15 @@ function ClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }
       onPick(e.latlng.lat, e.latlng.lng);
     },
   });
+  return null;
+}
+
+/** نمونه‌ی نقشه را برای استفاده بیرون از MapContainer (دکمه «موقعیت من») در یک ref قرار می‌دهد. */
+function MapInstanceBridge({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap();
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map, mapRef]);
   return null;
 }
 
@@ -46,20 +58,59 @@ export function MapPicker({
     [onChange]
   );
 
+  const mapRef = useRef<L.Map | null>(null);
+  const toast = useToast();
+  const [locating, setLocating] = useState(false);
+
+  function handleLocateMe() {
+    if (!navigator.geolocation) {
+      toast.show("مرورگر شما از موقعیت‌یابی پشتیبانی نمی‌کند", "error");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        onChange(latitude, longitude);
+        mapRef.current?.setView([latitude, longitude], 16);
+        setLocating(false);
+      },
+      () => {
+        toast.show("دسترسی به موقعیت مکانی امکان‌پذیر نشد", "error");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200">
-      <MapContainer
-        center={center}
-        zoom={12}
-        style={{ height: 260, width: "100%" }}
+    <div className="flex flex-col gap-2">
+      <div className="overflow-hidden rounded-xl border border-neutral-200">
+        <MapContainer
+          center={center}
+          zoom={12}
+          style={{ height: 260, width: "100%" }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <ClickHandler onPick={handlePick} />
+          <MapInstanceBridge mapRef={mapRef} />
+          {lat != null && lng != null && <Marker position={[lat, lng]} icon={pinIcon} />}
+        </MapContainer>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        loading={locating}
+        onClick={handleLocateMe}
+        className="self-start"
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <ClickHandler onPick={handlePick} />
-        {lat != null && lng != null && <Marker position={[lat, lng]} icon={pinIcon} />}
-      </MapContainer>
+        <LocateFixed className="size-4" />
+        موقعیت من
+      </Button>
     </div>
   );
 }

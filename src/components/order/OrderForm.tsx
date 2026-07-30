@@ -3,7 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createOrderBatchAction } from "@/actions/orders";
-import { AddressFields, emptyAddress, type AddressFormValue } from "./AddressFields";
+import {
+  AddressFields,
+  addressHasEnglishLetters,
+  emptyAddress,
+  type AddressFormValue,
+} from "./AddressFields";
 import { ParcelRow, type ParcelFormValue } from "./ParcelRow";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -20,7 +25,7 @@ function makeParcel(
   destCity: string,
   parcelType: "envelope" | "package",
   envelopeTypeId: string,
-  weightKg: string,
+  weightGrams: string,
   lengthCm: string,
   widthCm: string,
   heightCm: string,
@@ -31,7 +36,7 @@ function makeParcel(
     destination: emptyAddress(destProvince, destCity),
     parcelType,
     envelopeTypeId,
-    weightKg,
+    weightGrams,
     lengthCm,
     widthCm,
     heightCm,
@@ -61,7 +66,7 @@ export function OrderForm({
     destinationCity: string;
     parcelType: "envelope" | "package";
     envelopeTypeId: string;
-    weightKg: string;
+    weightGrams: string;
     lengthCm: string;
     widthCm: string;
     heightCm: string;
@@ -85,7 +90,7 @@ export function OrderForm({
       initial.destinationCity,
       initial.parcelType,
       initial.envelopeTypeId,
-      initial.weightKg,
+      initial.weightGrams,
       initial.lengthCm,
       initial.widthCm,
       initial.heightCm,
@@ -127,10 +132,28 @@ export function OrderForm({
       toast.show("لطفاً آدرس فرستنده را کامل وارد کنید", "error");
       return;
     }
+    if (addressHasEnglishLetters(origin)) {
+      toast.show("لطفا فارسی تایپ کنید", "error");
+      return;
+    }
+    if (origin.lat == null || origin.lng == null) {
+      toast.show("لطفاً موقعیت مبدا را روی نقشه مشخص کنید", "error");
+      return;
+    }
+
+    const destinationMapRequired = serviceType === "intracity";
 
     for (const p of parcels) {
       if (!p.destination.street.trim() || !p.destination.plaque.trim()) {
         toast.show("لطفاً آدرس همه گیرندگان را کامل وارد کنید", "error");
+        return;
+      }
+      if (addressHasEnglishLetters(p.destination)) {
+        toast.show("لطفا فارسی تایپ کنید", "error");
+        return;
+      }
+      if (destinationMapRequired && (p.destination.lat == null || p.destination.lng == null)) {
+        toast.show("لطفاً موقعیت گیرنده را روی نقشه مشخص کنید", "error");
         return;
       }
       if (p.parcelType === "envelope" && !p.envelopeTypeId) {
@@ -140,7 +163,7 @@ export function OrderForm({
       if (
         needsWeight &&
         p.parcelType === "package" &&
-        (!p.weightKg || !p.lengthCm || !p.widthCm || !p.heightCm)
+        (!p.weightGrams || !p.lengthCm || !p.widthCm || !p.heightCm)
       ) {
         toast.show("لطفاً وزن و ابعاد بسته را کامل وارد کنید", "error");
         return;
@@ -178,7 +201,7 @@ export function OrderForm({
           },
           parcelType: p.parcelType,
           envelopeTypeId: p.envelopeTypeId || undefined,
-          weightKg: p.weightKg ? Number(p.weightKg) : undefined,
+          weightGrams: p.weightGrams ? Number(p.weightGrams) : undefined,
           lengthCm: p.lengthCm ? Number(p.lengthCm) : undefined,
           widthCm: p.widthCm ? Number(p.widthCm) : undefined,
           heightCm: p.heightCm ? Number(p.heightCm) : undefined,
@@ -225,6 +248,7 @@ export function OrderForm({
           value={p}
           envelopeTypes={envelopeTypes}
           needsWeight={needsWeight}
+          destinationMapRequired={serviceType === "intracity"}
           onChange={(v) => updateParcel(p.key, v)}
           onRemove={() => removeParcel(p.key)}
           removable={parcels.length > 1}

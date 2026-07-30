@@ -53,7 +53,7 @@ export default async function PanelOrderDetailPage({
         <div className="text-sm text-neutral-600 space-y-1">
           <div>نوع: {order.parcelType === "envelope" ? "پاکت" : "بسته"}</div>
           {order.envelopeType && <div>نوع پاکت: {order.envelopeType.name}</div>}
-          {order.weightKg && <div>وزن: {String(order.weightKg)} کیلوگرم</div>}
+          {order.weightGrams != null && <div>وزن: {order.weightGrams.toLocaleString("fa-IR")} گرم</div>}
           {order.lengthCm && (
             <div>
               ابعاد: {order.lengthCm} × {order.widthCm} × {order.heightCm} سانتی‌متر

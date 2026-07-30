@@ -16,7 +16,7 @@ type SearchParams = {
   destinationCity?: string;
   parcelType?: "envelope" | "package";
   envelopeTypeId?: string;
-  weightKg?: string;
+  weightGrams?: string;
   lengthCm?: string;
   widthCm?: string;
   heightCm?: string;
@@ -102,7 +102,7 @@ export default async function OrderPage({
           destinationCity: sp.destinationCity!,
           parcelType: sp.parcelType!,
           envelopeTypeId: sp.envelopeTypeId ?? "",
-          weightKg: sp.weightKg ?? "",
+          weightGrams: sp.weightGrams ?? "",
           lengthCm: sp.lengthCm ?? "",
           widthCm: sp.widthCm ?? "",
           heightCm: sp.heightCm ?? "",
