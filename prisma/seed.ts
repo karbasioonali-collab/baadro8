@@ -258,12 +258,77 @@ async function seedStaffAndCompanyAccounts() {
   }
 }
 
+/**
+ * حساب‌های تشخیصی موقت — برای عیب‌یابی گزارش «رمز اشتباه است» در admin/login و
+ * «صفحه لود نمی‌شود» در company/login. جدا از حساب‌های اصلی بالا نگه داشته شده
+ * تا مشخص باشه بعد از رفع مشکل باید حذف بشن (مثل موردی که قبلاً برای
+ * src/app/api/debug اتفاق افتاد).
+ */
+async function seedDiagnosticTestAccounts() {
+  console.log("در حال ساخت حساب‌های تشخیصی...");
+
+  const testAdminExists = await prisma.employee.findUnique({ where: { username: "testadmin" } });
+  if (!testAdminExists) {
+    await prisma.employee.create({
+      data: {
+        name: "ادمین تست عیب‌یابی",
+        mobile: "09120000001",
+        username: "testadmin",
+        passwordHash: await bcrypt.hash("Test@12345", 10),
+        isFullAdmin: true,
+        active: true,
+      },
+    });
+    console.log("  کاربر تست ادمین ساخته شد → username: testadmin / password: Test@12345");
+  }
+
+  const testCompanyName = "شرکت تست عیب‌یابی";
+  let testCompany = await prisma.company.findFirst({ where: { name: testCompanyName } });
+  if (!testCompany) {
+    testCompany = await prisma.company.create({
+      data: {
+        name: testCompanyName,
+        type: "intercity",
+        active: true,
+        pricingSourceType: "internal_formula",
+        commissionType: "percent",
+        commissionValue: 10,
+        trackingMethod: "internal",
+      },
+    });
+    await prisma.pricingRule.create({
+      data: {
+        companyId: testCompany.id,
+        sourceType: "internal_formula",
+        ruleType: "formula",
+        formulaParams: { basePrice: 10000, pricePerKg: 1000, pricePerKm: 50 },
+      },
+    });
+  }
+
+  const testCompanyAccountExists = await prisma.companyAccount.findUnique({
+    where: { username: "testcompany" },
+  });
+  if (!testCompanyAccountExists) {
+    await prisma.companyAccount.create({
+      data: {
+        companyId: testCompany.id,
+        username: "testcompany",
+        passwordHash: await bcrypt.hash("Test@12345", 10),
+        active: true,
+      },
+    });
+    console.log("  حساب تست شرکت ساخته شد → username: testcompany / password: Test@12345");
+  }
+}
+
 async function main() {
   await seedCityDistanceIndex();
   await seedEnvelopeTypes();
   await seedHomepageSlides();
   await seedCompanies();
   await seedStaffAndCompanyAccounts();
+  await seedDiagnosticTestAccounts();
   console.log("seed کامل شد ✅");
 }
 

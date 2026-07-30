@@ -38,7 +38,13 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/company") && pathname !== "/company/login") {
+  // "/company/test" یک صفحه‌ی تشخیصی موقت است (بدون احراز هویت) — بعد از رفع
+  // مشکل company/login باید همراه با src/app/company/test حذف شود.
+  if (
+    pathname.startsWith("/company") &&
+    pathname !== "/company/login" &&
+    pathname !== "/company/test"
+  ) {
     const token = request.cookies.get(COOKIE_NAMES.company)?.value;
     if (!(await isAuthenticated(token))) {
       return NextResponse.redirect(new URL("/company/login", request.url));
