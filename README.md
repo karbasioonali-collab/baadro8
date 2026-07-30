@@ -36,7 +36,6 @@ src/
 │   ├── admin/                # پنل ادمین/کارمندان — layout خودش auth را چک می‌کند
 │   ├── company/               # پنل شرکت‌های طرف‌قرارداد
 │   ├── panel/                 # پنل مشتری
-│   ├── api/debug/              # روت تشخیصی موقت برای عیب‌یابی اتصال دیتابیس — باید حذف شود
 │   └── manifest.ts             # مانیفست PWA
 ├── actions/                   # Server Actions — تنها نقطه‌ی ورود عملیات نوشتنی (معادل لایه API)
 │   ├── admin/                  # عملیات مخصوص پنل ادمین (شرکت‌ها، کارمندان، محتوا، سفارش‌ها)
@@ -73,7 +72,7 @@ prisma/
 
 ### قواعد مهم معماری که باید رعایت بشه
 
-- **نوشتن = Server Action، نه Route Handler.** به‌جز `api/debug` (که موقتیه)، هیچ API route واقعی نداریم. فرم‌ها مستقیم یک تابع `"use server"` از `src/actions/*` صدا می‌زنن.
+- **نوشتن = Server Action، نه Route Handler.** هیچ API route واقعی نداریم. فرم‌ها مستقیم یک تابع `"use server"` از `src/actions/*` صدا می‌زنن.
 - **مرز Server/Client کامپوننت را جدی بگیرید.** چند باگ واقعی در این پروژه دقیقاً از همین‌جا اومده: از یک Server Component (مثل `layout.tsx` یک پنل) نمی‌شه یک ارجاع تابع/کامپوننت (مثلاً یک آیکون lucide به‌عنوان type، نه رندرشده) به یک Client Component پاس داد — چون در پشت صحنه باید serialize بشه و توابع serialize نمی‌شن. همیشه یا آیکون/تابع را در همون Server Component رندر کنید و JSX نهایی رو پاس بدید، یا اون بخش رو خودش Client Component کنید.
 - **سه کوکی session کاملاً جدا** (`badro_customer_session`, `badro_staff_session`, `badro_company_session`) — به `src/proxy.ts` و `src/lib/auth/session.ts` نگاه کنید.
 - **RBAC کارمندان جدول‌محوره**، نه hardcode: هر کارمند (`Employee`) به‌ازای هر ماژول (`PermissionModule`) یک ردیف `EmployeePermission` با `canView`/`canEdit` داره. ادمین کامل (`isFullAdmin`) از این چک عبور می‌کنه. تابع مرکزی چک: `src/lib/auth/rbac.ts` → `hasPermission()`، و در سطح صفحه از `requireStaffView()` (`src/lib/auth/require-permission.ts`) استفاده می‌شه.
@@ -284,4 +283,3 @@ npm run build               # build تولیدی (شامل type-check کامل)
 - درگاه پرداخت آنلاین، حساب کسب‌وکار، آپلود گروهی سفارش
 - اپلیکیشن موبایل نیتیو
 - اتصال به سرویس پیامک واقعی (کاوه‌نگار/ملی‌پیامک) — فقط جایگزینی کلاس `SmsProvider` در `src/lib/sms/provider.ts` لازمه، بقیه‌ی کد (تولید/چک OTP) دست‌نخورده می‌مونه
-- حذف `src/app/api/debug` — یک روت تشخیصی موقت برای عیب‌یابی اتصال دیتابیس در دیپلوی اولیه بود و نباید برای همیشه روی سایت زنده بمونه
