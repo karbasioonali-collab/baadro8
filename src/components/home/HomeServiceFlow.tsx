@@ -124,14 +124,6 @@ export function HomeServiceFlow({
     window.scrollTo(0, 0);
   }, [step]);
 
-  function nextIfPersian(address: AddressFormValue, next: Step) {
-    if (addressHasEnglishLetters(address)) {
-      toast.show("لطفا فارسی تایپ کنید", "error");
-      return;
-    }
-    setStep(next);
-  }
-
   function chooseService(type: ServiceType) {
     setServiceType(type);
     setStep(type === "intracity" ? "ic-city" : "ie-origin-address");
@@ -275,9 +267,10 @@ export function HomeServiceFlow({
             disabled={
               icOrigin.street.trim().length < 3 ||
               !icOrigin.plaque.trim() ||
-              icOrigin.lat == null
+              icOrigin.lat == null ||
+              addressHasEnglishLetters(icOrigin)
             }
-            onClick={() => nextIfPersian(icOrigin, "ic-destination")}
+            onClick={() => setStep("ic-destination")}
           />
         </StepShell>
       )}
@@ -300,9 +293,10 @@ export function HomeServiceFlow({
             disabled={
               icDestination.street.trim().length < 3 ||
               !icDestination.plaque.trim() ||
-              icDestination.lat == null
+              icDestination.lat == null ||
+              addressHasEnglishLetters(icDestination)
             }
-            onClick={() => nextIfPersian(icDestination, "parcel")}
+            onClick={() => setStep("parcel")}
           />
         </StepShell>
       )}
@@ -320,9 +314,10 @@ export function HomeServiceFlow({
               !ieOrigin.city ||
               ieOrigin.street.trim().length < 3 ||
               !ieOrigin.plaque.trim() ||
-              ieOrigin.lat == null
+              ieOrigin.lat == null ||
+              addressHasEnglishLetters(ieOrigin)
             }
-            onClick={() => nextIfPersian(ieOrigin, "ie-destination")}
+            onClick={() => setStep("ie-destination")}
           />
         </StepShell>
       )}
@@ -358,9 +353,10 @@ export function HomeServiceFlow({
               !ieDestCity ||
               ieDestination.street.trim().length < 3 ||
               !ieDestination.alley.trim() ||
-              !ieDestination.plaque.trim()
+              !ieDestination.plaque.trim() ||
+              addressHasEnglishLetters(ieDestination)
             }
-            onClick={() => nextIfPersian(ieDestination, "parcel")}
+            onClick={() => setStep("parcel")}
           />
         </StepShell>
       )}
