@@ -373,7 +373,7 @@ rm fix.js
 
 بدون migration — `PricingRule.formulaParams` (`Json?`) از قبل در schema بود، فقط شکل داده‌ی داخلش تغییر کرد.
 
-**کامیت:** (بعد از این commit ثبت می‌شود)
+**کامیت:** `556ea8b`
 
 ---
 
