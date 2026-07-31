@@ -446,9 +446,10 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
           <h3 className="font-semibold text-neutral-800 mb-4">تنظیمات ربات استعلام خودکار</h3>
           <p className="mb-4 text-xs text-neutral-500">
-            فعلاً فقط همین تنظیمات ذخیره می‌شوند — اجرای واقعی ربات (باز کردن صفحه شرکت،
-            پرکردن فرم و خواندن قیمت با Playwright/Puppeteer) هنوز پیاده‌سازی نشده و در
-            فاز بعدی انجام می‌شود.
+            ربات با Playwright صفحه‌ی زیر را باز می‌کند، فیلدها را طبق selectorهای زیر پر
+            می‌کند، چک‌باکس‌های لازم را تیک می‌زند، دکمه‌ی محاسبه را کلیک و قیمت را از
+            selector نتیجه می‌خواند. برای پیدا کردن selector دقیق هر فیلد، صفحه‌ی شرکت را
+            در مرورگر با Inspect Element باز کنید.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -477,6 +478,54 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
               onChange={(e) => setFieldSelector("weight", e.target.value)}
               dir="ltr"
             />
+            <Select
+              label="واحد وزن مورد انتظار صفحه"
+              value={value.automationConfig.weightUnit}
+              onChange={(e) =>
+                setAutomationConfig({
+                  weightUnit: e.target.value as CompanyFormValue["automationConfig"]["weightUnit"],
+                })
+              }
+            >
+              <option value="kg">کیلوگرم</option>
+              <option value="gram">گرم</option>
+            </Select>
+            <Input
+              label="Selector فیلد ارزش کالا"
+              value={value.automationConfig.fieldSelectors.declaredValue}
+              onChange={(e) => setFieldSelector("declaredValue", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="Selector فیلد طول (سانتی‌متر)"
+              value={value.automationConfig.fieldSelectors.length}
+              onChange={(e) => setFieldSelector("length", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="Selector فیلد عرض (سانتی‌متر)"
+              value={value.automationConfig.fieldSelectors.width}
+              onChange={(e) => setFieldSelector("width", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="Selector فیلد ارتفاع (سانتی‌متر)"
+              value={value.automationConfig.fieldSelectors.height}
+              onChange={(e) => setFieldSelector("height", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="Selector فیلد نوع محتوا"
+              value={value.automationConfig.fieldSelectors.contentType}
+              onChange={(e) => setFieldSelector("contentType", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="مقدار ثابت نوع محتوا"
+              value={value.automationConfig.contentTypeValue}
+              onChange={(e) => setAutomationConfig({ contentTypeValue: e.target.value })}
+              placeholder="مثلاً کالای تجاری — بادرو این را از مشتری نمی‌گیرد"
+            />
             <Input
               label="Selector دکمه ثبت/محاسبه"
               value={value.automationConfig.submitSelector}
@@ -491,6 +540,125 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
                 dir="ltr"
               />
             </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-neutral-700">
+                چک‌باکس‌هایی که باید همیشه تیک بخورند
+              </h4>
+              <button
+                type="button"
+                onClick={() =>
+                  setAutomationConfig({
+                    checkboxSelectors: [...value.automationConfig.checkboxSelectors, ""],
+                  })
+                }
+                className="text-xs text-brand-blue-600 hover:underline"
+              >
+                + افزودن چک‌باکس
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-neutral-500">
+              مثلاً «قبول از محل مشتری» یا «مرسوله نیاز به بسته‌بندی ندارد»
+            </p>
+            {value.automationConfig.checkboxSelectors.map((sel, i) => (
+              <div key={i} className="grid grid-cols-[1fr_auto] gap-2 mb-2">
+                <input
+                  value={sel}
+                  onChange={(e) =>
+                    setAutomationConfig({
+                      checkboxSelectors: value.automationConfig.checkboxSelectors.map((s, idx) =>
+                        idx === i ? e.target.value : s
+                      ),
+                    })
+                  }
+                  placeholder="Selector چک‌باکس"
+                  className="h-10 rounded-lg border border-neutral-200 px-2 text-sm"
+                  dir="ltr"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAutomationConfig({
+                      checkboxSelectors: value.automationConfig.checkboxSelectors.filter(
+                        (_, idx) => idx !== i
+                      ),
+                    })
+                  }
+                  className="text-xs text-danger"
+                >
+                  حذف
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-neutral-700">
+                فیلدهای خاص این شرکت با مقدار ثابت
+              </h4>
+              <button
+                type="button"
+                onClick={() =>
+                  setAutomationConfig({
+                    extraStaticFields: [
+                      ...value.automationConfig.extraStaticFields,
+                      { selector: "", value: "" },
+                    ],
+                  })
+                }
+                className="text-xs text-brand-blue-600 hover:underline"
+              >
+                + افزودن فیلد
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-neutral-500">
+              برای فیلدهایی که در لیست بالا نیستند ولی صفحه شرکت به آن‌ها نیاز دارد.
+            </p>
+            {value.automationConfig.extraStaticFields.map((f, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 mb-2">
+                <input
+                  value={f.selector}
+                  onChange={(e) =>
+                    setAutomationConfig({
+                      extraStaticFields: value.automationConfig.extraStaticFields.map((x, idx) =>
+                        idx === i ? { ...x, selector: e.target.value } : x
+                      ),
+                    })
+                  }
+                  placeholder="Selector"
+                  className="h-10 rounded-lg border border-neutral-200 px-2 text-sm"
+                  dir="ltr"
+                />
+                <input
+                  value={f.value}
+                  onChange={(e) =>
+                    setAutomationConfig({
+                      extraStaticFields: value.automationConfig.extraStaticFields.map((x, idx) =>
+                        idx === i ? { ...x, value: e.target.value } : x
+                      ),
+                    })
+                  }
+                  placeholder="مقدار ثابت"
+                  className="h-10 rounded-lg border border-neutral-200 px-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAutomationConfig({
+                      extraStaticFields: value.automationConfig.extraStaticFields.filter(
+                        (_, idx) => idx !== i
+                      ),
+                    })
+                  }
+                  className="text-xs text-danger"
+                >
+                  حذف
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}

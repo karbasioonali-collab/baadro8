@@ -2,12 +2,28 @@ type WeightTier = { minWeight: number; maxWeight: number; price: number };
 type DistanceFactor = { minDistance: number; maxDistance: number; factor: number };
 
 /**
- * تنظیمات pricingSourceType = page_automation. فقط تنظیمات ذخیره می‌شوند —
- * اجرای واقعی ربات (Playwright/Puppeteer) هنوز پیاده نشده، فاز بعدی است.
+ * تنظیمات pricingSourceType = page_automation — با Playwright صفحه‌ی استعلام قیمت
+ * شرکت را پر و قیمت نهایی را استخراج می‌کند (src/lib/pricing/page-automation-provider.ts).
  */
 export type AutomationConfig = {
   url: string;
-  fieldSelectors: { origin: string; destination: string; weight: string };
+  fieldSelectors: {
+    origin: string;
+    destination: string;
+    weight: string;
+    declaredValue: string;
+    length: string;
+    width: string;
+    height: string;
+    contentType: string;
+  };
+  /** مقداری که همیشه در فیلد «نوع محتوا» انتخاب می‌شود (بادرو این را از مشتری نمی‌گیرد) */
+  contentTypeValue: string;
+  weightUnit: "kg" | "gram";
+  /** selector چک‌باکس‌هایی که باید همیشه تیک بخورند (مثل «قبول از محل مشتری») */
+  checkboxSelectors: string[];
+  /** فیلدهای خاصِ این شرکت با مقدار ثابت که در fieldSelectors نمی‌گنجند */
+  extraStaticFields: { selector: string; value: string }[];
   submitSelector: string;
   resultSelector: string;
 };
@@ -71,7 +87,20 @@ export function emptyCompanyForm(): CompanyFormValue {
     apiKey: "",
     automationConfig: {
       url: "",
-      fieldSelectors: { origin: "", destination: "", weight: "" },
+      fieldSelectors: {
+        origin: "",
+        destination: "",
+        weight: "",
+        declaredValue: "",
+        length: "",
+        width: "",
+        height: "",
+        contentType: "",
+      },
+      contentTypeValue: "",
+      weightUnit: "kg",
+      checkboxSelectors: ["", ""],
+      extraStaticFields: [],
       submitSelector: "",
       resultSelector: "",
     },

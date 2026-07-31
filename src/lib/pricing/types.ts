@@ -23,6 +23,10 @@ export type PriceQuoteInput = {
   destinationCity: string;
   parcelType: "envelope" | "package";
   weightGrams?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
+  declaredValue?: number;
   envelopePriceModifier?: number;
 };
 

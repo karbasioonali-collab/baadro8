@@ -25,15 +25,26 @@ const tieredSchema = z.object({
     .min(1),
 });
 
-// برای pricingSourceType = page_automation — فقط تنظیمات ذخیره می‌شوند، اجرای
-// واقعی ربات (Playwright/Puppeteer) هنوز پیاده نشده و فاز بعدی است.
+// برای pricingSourceType = page_automation — با Playwright واقعاً اجرا می‌شود
+// (src/lib/pricing/page-automation-provider.ts).
 const automationConfigSchema = z.object({
   url: z.string().trim().optional(),
   fieldSelectors: z.object({
     origin: z.string().trim().optional(),
     destination: z.string().trim().optional(),
     weight: z.string().trim().optional(),
+    declaredValue: z.string().trim().optional(),
+    length: z.string().trim().optional(),
+    width: z.string().trim().optional(),
+    height: z.string().trim().optional(),
+    contentType: z.string().trim().optional(),
   }),
+  contentTypeValue: z.string().trim().optional(),
+  weightUnit: z.enum(["kg", "gram"]).optional(),
+  checkboxSelectors: z.array(z.string().trim()).optional(),
+  extraStaticFields: z
+    .array(z.object({ selector: z.string().trim(), value: z.string().trim() }))
+    .optional(),
   submitSelector: z.string().trim().optional(),
   resultSelector: z.string().trim().optional(),
 });
@@ -182,7 +193,20 @@ export async function saveCompanyAction(
         ruleType: "formula" as const,
         formulaParams: (data.automationConfig ?? {
           url: "",
-          fieldSelectors: { origin: "", destination: "", weight: "" },
+          fieldSelectors: {
+            origin: "",
+            destination: "",
+            weight: "",
+            declaredValue: "",
+            length: "",
+            width: "",
+            height: "",
+            contentType: "",
+          },
+          contentTypeValue: "",
+          weightUnit: "kg",
+          checkboxSelectors: [],
+          extraStaticFields: [],
           submitSelector: "",
           resultSelector: "",
         }) as object,

@@ -86,6 +86,10 @@ export async function createOrderBatchAction(
         destinationCity: parcel.destination.city,
         parcelType: parcel.parcelType,
         weightGrams: parcel.weightGrams,
+        lengthCm: parcel.lengthCm,
+        widthCm: parcel.widthCm,
+        heightCm: parcel.heightCm,
+        declaredValue: parcel.declaredValue,
         envelopeTypeId: parcel.envelopeTypeId,
       })
     )

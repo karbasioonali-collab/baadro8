@@ -75,6 +75,10 @@ export function ParcelDetailsStep({
           destinationCity,
           parcelType: "package",
           weightGrams: needsWeight ? Number(value.weightGrams) : undefined,
+          lengthCm: value.lengthCm ? Number(value.lengthCm) : undefined,
+          widthCm: value.widthCm ? Number(value.widthCm) : undefined,
+          heightCm: value.heightCm ? Number(value.heightCm) : undefined,
+          declaredValue: value.declaredValue ? Number(value.declaredValue) : undefined,
         });
         setApproxPrice(price);
       });
@@ -86,6 +90,10 @@ export function ParcelDetailsStep({
   }, [
     value.parcelType,
     value.weightGrams,
+    value.lengthCm,
+    value.widthCm,
+    value.heightCm,
+    value.declaredValue,
     needsWeight,
     originCity,
     destinationCity,

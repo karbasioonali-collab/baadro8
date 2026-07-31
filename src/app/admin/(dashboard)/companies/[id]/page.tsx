@@ -47,9 +47,15 @@ export default async function EditCompanyPage({
     tiers: (rule?.tiers as CompanyFormValue["tiers"]) ?? base.tiers,
     apiBaseUrl: company.apiBaseUrl ?? "",
     apiKey: company.apiKey ?? "",
-    automationConfig:
-      (automationRule?.formulaParams as CompanyFormValue["automationConfig"]) ??
-      base.automationConfig,
+    automationConfig: {
+      ...base.automationConfig,
+      ...((automationRule?.formulaParams as Partial<CompanyFormValue["automationConfig"]>) ?? {}),
+      fieldSelectors: {
+        ...base.automationConfig.fieldSelectors,
+        ...((automationRule?.formulaParams as { fieldSelectors?: object } | null)?.fieldSelectors ??
+          {}),
+      },
+    },
     username: account?.username ?? "",
     password: "",
     hasAccount: Boolean(account),

@@ -24,6 +24,10 @@ export type QuoteRequest = {
   destinationCity: string;
   parcelType: "envelope" | "package";
   weightGrams?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
+  declaredValue?: number;
   envelopeTypeId?: string;
 };
 
@@ -73,6 +77,10 @@ export async function getQuotesForRequest(
         destinationCity: req.destinationCity,
         parcelType: req.parcelType,
         weightGrams: req.weightGrams,
+        lengthCm: req.lengthCm,
+        widthCm: req.widthCm,
+        heightCm: req.heightCm,
+        declaredValue: req.declaredValue,
         envelopePriceModifier,
       });
 
@@ -115,6 +123,10 @@ export async function getQuoteForCompany(
     destinationCity: req.destinationCity,
     parcelType: req.parcelType,
     weightGrams: req.weightGrams,
+    lengthCm: req.lengthCm,
+    widthCm: req.widthCm,
+    heightCm: req.heightCm,
+    declaredValue: req.declaredValue,
     envelopePriceModifier,
   });
 

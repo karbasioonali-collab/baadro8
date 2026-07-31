@@ -54,6 +54,10 @@ export default async function ResultsPage({
     destinationCity: sp.destinationCity!,
     parcelType: sp.parcelType!,
     weightGrams: sp.weightGrams ? Number(sp.weightGrams) : undefined,
+    lengthCm: sp.lengthCm ? Number(sp.lengthCm) : undefined,
+    widthCm: sp.widthCm ? Number(sp.widthCm) : undefined,
+    heightCm: sp.heightCm ? Number(sp.heightCm) : undefined,
+    declaredValue: sp.declaredValue ? Number(sp.declaredValue) : undefined,
     envelopeTypeId: sp.envelopeTypeId,
   });
 
