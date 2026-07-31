@@ -50,6 +50,14 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
       toast.show("نام شرکت الزامی است", "error");
       return;
     }
+    if (value.username.trim().length < 3) {
+      toast.show("نام کاربری باید حداقل ۳ حرف باشد", "error");
+      return;
+    }
+    if (!value.hasAccount && value.password.length < 4) {
+      toast.show("رمز عبور باید حداقل ۴ کاراکتر باشد", "error");
+      return;
+    }
 
     const input: CompanyFormInput = {
       id: value.id,
@@ -70,6 +78,8 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
       ruleType: value.ruleType,
       formulaParams: value.ruleType === "formula" ? value.formulaParams : undefined,
       tiers: value.ruleType === "tiered" ? value.tiers : undefined,
+      username: value.username,
+      password: value.password || undefined,
     };
 
     startTransition(async () => {
@@ -170,6 +180,30 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
             className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm outline-none focus:border-brand-blue-400 focus:ring-2 focus:ring-brand-blue-100"
           />
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <h3 className="font-semibold text-neutral-800 mb-4">ورود پنل شرکت</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input
+            label="نام کاربری"
+            value={value.username}
+            onChange={(e) => set("username", e.target.value)}
+            dir="ltr"
+          />
+          <Input
+            label={value.hasAccount ? "رمز عبور جدید (اختیاری)" : "رمز عبور"}
+            type="password"
+            value={value.password}
+            onChange={(e) => set("password", e.target.value)}
+            dir="ltr"
+          />
+        </div>
+        {!value.hasAccount && (
+          <p className="mt-2 text-xs text-neutral-500">
+            این شرکت هنوز حساب ورود پنل ندارد — با ذخیره‌ی این فرم، حساب ساخته می‌شود.
+          </p>
+        )}
       </div>
 
       <div className="rounded-2xl border border-neutral-200 bg-white p-5">

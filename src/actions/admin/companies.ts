@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentEmployee } from "@/lib/auth/current-staff";
+import { hashPassword } from "@/lib/auth/password";
 
 const formulaSchema = z.object({
   basePrice: z.number().min(0),
@@ -40,6 +41,8 @@ const companyInputSchema = z.object({
   ruleType: z.enum(["formula", "tiered"]),
   formulaParams: formulaSchema.optional(),
   tiers: tieredSchema.optional(),
+  username: z.string().trim().min(3, "نام کاربری باید حداقل ۳ حرف باشد"),
+  password: z.string().optional(),
 });
 
 export type CompanyFormInput = z.infer<typeof companyInputSchema>;
@@ -62,6 +65,26 @@ export async function saveCompanyAction(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "اطلاعات نامعتبر است" };
   }
   const data = parsed.data;
+
+  // شرکت جدید، یا شرکتی که هنوز هیچ CompanyAccount ای ندارد (مثلاً از قبل seed/دستی
+  // ساخته شده) — در هر دو حالت رمز عبور اجباری است چون رمز قبلی‌ای برای نگه‌داشتن نیست.
+  const existingAccount = data.id
+    ? await prisma.companyAccount.findFirst({ where: { companyId: data.id } })
+    : null;
+
+  if (!existingAccount && (!data.password || data.password.length < 4)) {
+    return { ok: false, error: "رمز عبور باید حداقل ۴ کاراکتر باشد" };
+  }
+
+  const usernameTaken = await prisma.companyAccount.findFirst({
+    where: {
+      username: data.username,
+      ...(existingAccount ? { id: { not: existingAccount.id } } : {}),
+    },
+  });
+  if (usernameTaken) {
+    return { ok: false, error: "این نام کاربری قبلاً استفاده شده است" };
+  }
 
   const company = await prisma.$transaction(async (tx) => {
     const saved = data.id
@@ -126,6 +149,24 @@ export async function saveCompanyAction(
           data: { companyId: saved.id, sourceType: "internal_formula", ...ruleData },
         });
       }
+    }
+
+    if (existingAccount) {
+      await tx.companyAccount.update({
+        where: { id: existingAccount.id },
+        data: {
+          username: data.username,
+          ...(data.password ? { passwordHash: await hashPassword(data.password) } : {}),
+        },
+      });
+    } else {
+      await tx.companyAccount.create({
+        data: {
+          companyId: saved.id,
+          username: data.username,
+          passwordHash: await hashPassword(data.password!),
+        },
+      });
     }
 
     return saved;

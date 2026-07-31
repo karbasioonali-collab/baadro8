@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Package, Wallet } from "lucide-react";
+import { Package, Wallet, Settings } from "lucide-react";
 import { getCompanySession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { PanelShell } from "@/components/panel/PanelShell";
@@ -15,6 +15,11 @@ const navItems = [
     href: "/company/reports",
     label: "گزارشات مالی",
     icon: <Wallet className="size-[18px] shrink-0" strokeWidth={1.8} />,
+  },
+  {
+    href: "/company/settings",
+    label: "تنظیمات حساب",
+    icon: <Settings className="size-[18px] shrink-0" strokeWidth={1.8} />,
   },
 ];
 

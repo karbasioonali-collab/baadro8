@@ -19,12 +19,13 @@ export default async function EditCompanyPage({
 
   const company = await prisma.company.findUnique({
     where: { id },
-    include: { coveredCities: true, pricingRules: true },
+    include: { coveredCities: true, pricingRules: true, accounts: true },
   });
 
   if (!company) notFound();
 
   const rule = company.pricingRules.find((r) => r.sourceType === "internal_formula");
+  const account = company.accounts[0];
   const base = emptyCompanyForm();
 
   const value: CompanyFormValue = {
@@ -43,6 +44,9 @@ export default async function EditCompanyPage({
     ruleType: rule?.ruleType ?? "formula",
     formulaParams: (rule?.formulaParams as CompanyFormValue["formulaParams"]) ?? base.formulaParams,
     tiers: (rule?.tiers as CompanyFormValue["tiers"]) ?? base.tiers,
+    username: account?.username ?? "",
+    password: "",
+    hasAccount: Boolean(account),
   };
 
   return <CompanyForm initial={value} />;

@@ -17,6 +17,12 @@ export type CompanyFormValue = {
   ruleType: "formula" | "tiered";
   formulaParams: { basePrice: number; pricePerKg: number; pricePerKm: number };
   tiers: { weightTiers: WeightTier[]; distanceFactors: DistanceFactor[] };
+  /** نام کاربری ورود پنل شرکت (CompanyAccount) */
+  username: string;
+  /** رمز عبور — موقع ساخت شرکت جدید یا شرکتی که هنوز حساب ورود ندارد اجباری است */
+  password: string;
+  /** آیا این شرکت از قبل یک CompanyAccount دارد؟ فقط برای تعیین برچسب/الزامی‌بودن رمز در فرم استفاده می‌شود */
+  hasAccount: boolean;
 };
 
 /**
@@ -44,5 +50,8 @@ export function emptyCompanyForm(): CompanyFormValue {
       weightTiers: [{ minWeight: 0, maxWeight: 5, price: 60000 }],
       distanceFactors: [{ minDistance: 0, maxDistance: 500, factor: 1 }],
     },
+    username: "",
+    password: "",
+    hasAccount: false,
   };
 }
