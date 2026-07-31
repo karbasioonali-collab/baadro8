@@ -25,6 +25,7 @@ export default async function EditCompanyPage({
   if (!company) notFound();
 
   const rule = company.pricingRules.find((r) => r.sourceType === "internal_formula");
+  const automationRule = company.pricingRules.find((r) => r.sourceType === "page_automation");
   const account = company.accounts[0];
   const base = emptyCompanyForm();
 
@@ -44,6 +45,11 @@ export default async function EditCompanyPage({
     ruleType: rule?.ruleType ?? "formula",
     formulaParams: (rule?.formulaParams as CompanyFormValue["formulaParams"]) ?? base.formulaParams,
     tiers: (rule?.tiers as CompanyFormValue["tiers"]) ?? base.tiers,
+    apiBaseUrl: company.apiBaseUrl ?? "",
+    apiKey: company.apiKey ?? "",
+    automationConfig:
+      (automationRule?.formulaParams as CompanyFormValue["automationConfig"]) ??
+      base.automationConfig,
     username: account?.username ?? "",
     password: "",
     hasAccount: Boolean(account),

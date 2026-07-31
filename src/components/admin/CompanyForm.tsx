@@ -45,6 +45,26 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
     }));
   }
 
+  function setAutomationConfig(patch: Partial<CompanyFormValue["automationConfig"]>) {
+    setValue((prev) => ({
+      ...prev,
+      automationConfig: { ...prev.automationConfig, ...patch },
+    }));
+  }
+
+  function setFieldSelector(
+    key: keyof CompanyFormValue["automationConfig"]["fieldSelectors"],
+    v: string
+  ) {
+    setValue((prev) => ({
+      ...prev,
+      automationConfig: {
+        ...prev.automationConfig,
+        fieldSelectors: { ...prev.automationConfig.fieldSelectors, [key]: v },
+      },
+    }));
+  }
+
   function handleSubmit() {
     if (value.name.trim().length < 2) {
       toast.show("نام شرکت الزامی است", "error");
@@ -78,6 +98,9 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
       ruleType: value.ruleType,
       formulaParams: value.ruleType === "formula" ? value.formulaParams : undefined,
       tiers: value.ruleType === "tiered" ? value.tiers : undefined,
+      apiBaseUrl: value.apiBaseUrl || undefined,
+      apiKey: value.apiKey || undefined,
+      automationConfig: value.automationConfig,
       username: value.username,
       password: value.password || undefined,
     };
@@ -129,9 +152,9 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
               set("pricingSourceType", e.target.value as CompanyFormValue["pricingSourceType"])
             }
           >
-            <option value="internal_formula">فرمول داخلی (فعال)</option>
-            <option value="external_api">API شرکت (به‌زودی)</option>
-            <option value="page_automation">اتوماسیون صفحه قیمت (به‌زودی)</option>
+            <option value="internal_formula">فرمول داخلی</option>
+            <option value="external_api">API شرکت</option>
+            <option value="page_automation">ربات استعلام خودکار (فقط تنظیمات — اجرا در فاز بعد)</option>
           </Select>
           <Select
             label="روش استعلام کد رهگیری"
@@ -395,6 +418,80 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {value.pricingSourceType === "external_api" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h3 className="font-semibold text-neutral-800 mb-4">اطلاعات API شرکت</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="آدرس API"
+              value={value.apiBaseUrl}
+              onChange={(e) => set("apiBaseUrl", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="کلید API"
+              type="password"
+              value={value.apiKey}
+              onChange={(e) => set("apiKey", e.target.value)}
+              dir="ltr"
+            />
+          </div>
+        </div>
+      )}
+
+      {value.pricingSourceType === "page_automation" && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h3 className="font-semibold text-neutral-800 mb-4">تنظیمات ربات استعلام خودکار</h3>
+          <p className="mb-4 text-xs text-neutral-500">
+            فعلاً فقط همین تنظیمات ذخیره می‌شوند — اجرای واقعی ربات (باز کردن صفحه شرکت،
+            پرکردن فرم و خواندن قیمت با Playwright/Puppeteer) هنوز پیاده‌سازی نشده و در
+            فاز بعدی انجام می‌شود.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Input
+                label="آدرس صفحه استعلام قیمت شرکت"
+                value={value.automationConfig.url}
+                onChange={(e) => setAutomationConfig({ url: e.target.value })}
+                dir="ltr"
+              />
+            </div>
+            <Input
+              label="Selector فیلد مبدا"
+              value={value.automationConfig.fieldSelectors.origin}
+              onChange={(e) => setFieldSelector("origin", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="Selector فیلد مقصد"
+              value={value.automationConfig.fieldSelectors.destination}
+              onChange={(e) => setFieldSelector("destination", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="Selector فیلد وزن"
+              value={value.automationConfig.fieldSelectors.weight}
+              onChange={(e) => setFieldSelector("weight", e.target.value)}
+              dir="ltr"
+            />
+            <Input
+              label="Selector دکمه ثبت/محاسبه"
+              value={value.automationConfig.submitSelector}
+              onChange={(e) => setAutomationConfig({ submitSelector: e.target.value })}
+              dir="ltr"
+            />
+            <div className="sm:col-span-2">
+              <Input
+                label="Selector محل نمایش نتیجه (قیمت)"
+                value={value.automationConfig.resultSelector}
+                onChange={(e) => setAutomationConfig({ resultSelector: e.target.value })}
+                dir="ltr"
+              />
+            </div>
+          </div>
         </div>
       )}
 

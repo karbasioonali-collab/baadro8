@@ -25,6 +25,19 @@ const tieredSchema = z.object({
     .min(1),
 });
 
+// برای pricingSourceType = page_automation — فقط تنظیمات ذخیره می‌شوند، اجرای
+// واقعی ربات (Playwright/Puppeteer) هنوز پیاده نشده و فاز بعدی است.
+const automationConfigSchema = z.object({
+  url: z.string().trim().optional(),
+  fieldSelectors: z.object({
+    origin: z.string().trim().optional(),
+    destination: z.string().trim().optional(),
+    weight: z.string().trim().optional(),
+  }),
+  submitSelector: z.string().trim().optional(),
+  resultSelector: z.string().trim().optional(),
+});
+
 const companyInputSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(2, "نام شرکت الزامی است"),
@@ -41,6 +54,9 @@ const companyInputSchema = z.object({
   ruleType: z.enum(["formula", "tiered"]),
   formulaParams: formulaSchema.optional(),
   tiers: tieredSchema.optional(),
+  apiBaseUrl: z.string().trim().optional(),
+  apiKey: z.string().trim().optional(),
+  automationConfig: automationConfigSchema.optional(),
   username: z.string().trim().min(3, "نام کاربری باید حداقل ۳ حرف باشد"),
   password: z.string().optional(),
 });
@@ -101,6 +117,8 @@ export async function saveCompanyAction(
             trackingMethod: data.trackingMethod,
             trackingEndpoint: data.trackingEndpoint || null,
             pricingSourceType: data.pricingSourceType,
+            apiBaseUrl: data.apiBaseUrl || null,
+            apiKey: data.apiKey || null,
           },
         })
       : await tx.company.create({
@@ -115,6 +133,8 @@ export async function saveCompanyAction(
             trackingMethod: data.trackingMethod,
             trackingEndpoint: data.trackingEndpoint || null,
             pricingSourceType: data.pricingSourceType,
+            apiBaseUrl: data.apiBaseUrl || null,
+            apiKey: data.apiKey || null,
           },
         });
 
@@ -147,6 +167,35 @@ export async function saveCompanyAction(
       } else {
         await tx.pricingRule.create({
           data: { companyId: saved.id, sourceType: "internal_formula", ...ruleData },
+        });
+      }
+    }
+
+    if (data.pricingSourceType === "page_automation") {
+      const existingAutomationRule = await tx.pricingRule.findFirst({
+        where: { companyId: saved.id, sourceType: "page_automation" },
+      });
+
+      const automationRuleData = {
+        // ruleType برای این نوع رول معنا ندارد (نه فرمول ریاضیه نه پله‌ای)؛ فقط
+        // چون ستون NOT NULL است یک مقدار پیش‌فرض بی‌اثر می‌گذاریم.
+        ruleType: "formula" as const,
+        formulaParams: (data.automationConfig ?? {
+          url: "",
+          fieldSelectors: { origin: "", destination: "", weight: "" },
+          submitSelector: "",
+          resultSelector: "",
+        }) as object,
+      };
+
+      if (existingAutomationRule) {
+        await tx.pricingRule.update({
+          where: { id: existingAutomationRule.id },
+          data: automationRuleData,
+        });
+      } else {
+        await tx.pricingRule.create({
+          data: { companyId: saved.id, sourceType: "page_automation", ...automationRuleData },
         });
       }
     }
