@@ -5,13 +5,7 @@ import { clsx } from "clsx";
 import { trackOrderAction, type TrackResult } from "@/actions/tracking";
 import { Button } from "@/components/ui/Button";
 
-type CompanyItem = {
-  id: string;
-  name: string;
-  logoUrl: string | null;
-  hasApi: boolean;
-  externalUrl: string | null;
-};
+type CompanyItem = { id: string; name: string; logoUrl: string | null };
 
 export function TrackingGrid({ companies }: { companies: CompanyItem[] }) {
   const [selected, setSelected] = useState<CompanyItem | null>(null);
@@ -36,53 +30,30 @@ export function TrackingGrid({ companies }: { companies: CompanyItem[] }) {
   return (
     <div>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-        {companies.map((c) =>
-          c.externalUrl ? (
-            <a
-              key={c.id}
-              href={c.externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center gap-2 rounded-2xl border-2 border-brand-green-300 bg-white p-4 transition-colors hover:border-brand-green-400"
-            >
-              <div className="flex size-12 items-center justify-center rounded-xl bg-neutral-100 font-bold text-neutral-500 overflow-hidden">
-                {c.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.logoUrl} alt={c.name} className="size-full object-cover" />
-                ) : (
-                  c.name.slice(0, 2)
-                )}
-              </div>
-              <span className="text-xs text-center text-neutral-600 line-clamp-1">
-                {c.name}
-              </span>
-              <span className="text-[10px] text-brand-blue-600">سامانه شرکت ↗</span>
-            </a>
-          ) : (
-            <button
-              key={c.id}
-              onClick={() => handleSelect(c)}
-              className={clsx(
-                "flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-colors",
-                selected?.id === c.id
-                  ? "border-brand-blue-400 bg-brand-blue-50"
-                  : "border-brand-green-300 bg-white hover:border-brand-green-400"
+        {companies.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => handleSelect(c)}
+            className={clsx(
+              "flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-colors",
+              selected?.id === c.id
+                ? "border-brand-blue-400 bg-brand-blue-50"
+                : "border-brand-green-300 bg-white hover:border-brand-green-400"
+            )}
+          >
+            <div className="flex size-12 items-center justify-center rounded-xl bg-neutral-100 font-bold text-neutral-500 overflow-hidden">
+              {c.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.logoUrl} alt={c.name} className="size-full object-cover" />
+              ) : (
+                c.name.slice(0, 2)
               )}
-            >
-              <div className="flex size-12 items-center justify-center rounded-xl bg-neutral-100 font-bold text-neutral-500 overflow-hidden">
-                {c.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.logoUrl} alt={c.name} className="size-full object-cover" />
-                ) : (
-                  c.name.slice(0, 2)
-                )}
-              </div>
-              <span className="text-xs text-center text-neutral-600 line-clamp-1">
-                {c.name}
-              </span>
-            </button>
-          )
-        )}
+            </div>
+            <span className="text-xs text-center text-neutral-600 line-clamp-1">
+              {c.name}
+            </span>
+          </button>
+        ))}
       </div>
 
       {selected && (
@@ -124,57 +95,6 @@ function TrackingResultView({ result }: { result: TrackResult }) {
       <div className="mt-4 rounded-xl bg-neutral-100 p-4 text-sm text-neutral-600">
         استعلام مستقیم برای این شرکت هنوز در بادرو فعال نشده است. به‌زودی این
         بخش تکمیل می‌شود.
-      </div>
-    );
-  }
-
-  if (result.kind === "api_error") {
-    return (
-      <div className="mt-4 rounded-xl bg-danger/10 p-4 text-sm text-danger">
-        خطا در دریافت اطلاعات از سامانه شرکت: {result.message}
-      </div>
-    );
-  }
-
-  if (result.kind === "api") {
-    return (
-      <div className="mt-4 rounded-xl bg-brand-blue-50 p-4">
-        <div className="text-sm text-neutral-600">
-          وضعیت فعلی: <b className="text-brand-blue-800">{result.status}</b>
-        </div>
-        {(result.origin || result.destination) && (
-          <div className="mt-2 text-xs text-neutral-500">
-            {result.origin && <>مبدا: {result.origin} </>}
-            {result.destination && <>· مقصد: {result.destination}</>}
-          </div>
-        )}
-        {result.history.length > 0 && (
-          <ol className="mt-3 flex flex-col gap-2">
-            {result.history.map((h, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm text-neutral-600">
-                <span className="size-2 rounded-full bg-brand-blue-500" />
-                {h.title}
-                {h.date && (
-                  <span className="text-xs text-neutral-400" dir="ltr">
-                    {h.date}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        )}
-        {result.recipient && (
-          <div className="mt-3 text-xs text-neutral-500">
-            تحویل‌گیرنده: {result.recipient}
-          </div>
-        )}
-        {result.signatureUrl && (
-          <div className="mt-2">
-            <div className="text-xs text-neutral-500 mb-1">امضای تحویل‌گیرنده:</div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={result.signatureUrl} alt="امضا" className="h-16 rounded-lg border border-neutral-200 bg-white" />
-          </div>
-        )}
       </div>
     );
   }

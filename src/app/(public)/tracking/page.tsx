@@ -8,25 +8,8 @@ export default async function TrackingPage() {
   const companies = await prisma.company.findMany({
     where: { active: true },
     orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      logoUrl: true,
-      apiBaseUrl: true,
-      trackingEndpoint: true,
-    },
+    select: { id: true, name: true, logoUrl: true },
   });
-
-  const items = companies.map((c) => ({
-    id: c.id,
-    name: c.name,
-    logoUrl: c.logoUrl,
-    // اگر شرکت به API واقعی وصل است، فرم رهگیری داخل همین صفحه نتیجه را نشان
-    // می‌دهد؛ در غیر این صورت اگر لینک رهگیری خارجی تعریف شده، آیکون مستقیماً
-    // به همان لینک وصل می‌شود.
-    hasApi: Boolean(c.apiBaseUrl),
-    externalUrl: !c.apiBaseUrl && c.trackingEndpoint ? c.trackingEndpoint : null,
-  }));
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-12">
@@ -45,7 +28,7 @@ export default async function TrackingPage() {
           هنوز شرکتی ثبت نشده است.
         </div>
       ) : (
-        <TrackingGrid companies={items} />
+        <TrackingGrid companies={companies} />
       )}
     </div>
   );

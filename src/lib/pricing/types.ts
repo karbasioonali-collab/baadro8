@@ -19,9 +19,7 @@ export type TieredParams = {
 export type PriceQuoteInput = {
   companyId: string;
   serviceType: "intercity" | "intracity";
-  originProvince?: string;
   originCity: string;
-  destinationProvince?: string;
   destinationCity: string;
   parcelType: "envelope" | "package";
   weightGrams?: number;
