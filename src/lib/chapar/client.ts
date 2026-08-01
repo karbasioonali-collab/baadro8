@@ -51,22 +51,44 @@ async function chaparRequest<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const fullBody = {
+    user: { username: creds.username, password: creds.password },
+    ...body,
+  };
   try {
     const res = await fetch(`${creds.baseUrl.replace(/\/$/, "")}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user: { username: creds.username, password: creds.password },
-        ...body,
-      }),
+      body: JSON.stringify(fullBody),
       signal: controller.signal,
     });
 
+    // خواندن به‌صورت متن خام (نه مستقیم res.json()) عمداً است: اگر پاسخ
+    // JSON معتبر نباشد (مثلاً صفحه‌ی خطای HTML)، res.json() خودش throw
+    // می‌کند و دیگر نمی‌شد بدنه‌ی خام را دید — با این روش همیشه قابل‌دیدن است.
+    const rawText = await res.text();
+
+    // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت خالی/نامعتبر برگشتن
+    // پاسخ چاپار، این console.error حذف شود. رمز عبور عمداً *** می‌شود.
+    console.error("[Chapar] پاسخ خام HTTP", {
+      path,
+      sentPayload: { ...body, user: { username: creds.username, password: "***REDACTED***" } },
+      httpStatus: res.status,
+      httpStatusText: res.statusText,
+      rawResponseBody: rawText,
+    });
+
     if (!res.ok) {
-      throw new ChaparApiError(`چاپار HTTP ${res.status}`);
+      throw new ChaparApiError(`چاپار HTTP ${res.status}: ${rawText.slice(0, 500)}`);
     }
 
-    return (await res.json()) as T;
+    try {
+      return JSON.parse(rawText) as T;
+    } catch (parseErr) {
+      throw new ChaparApiError(
+        `پاسخ چاپار JSON معتبر نبود: ${parseErr instanceof Error ? parseErr.message : "نامشخص"}`
+      );
+    }
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       throw new ChaparApiError("تایم‌اوت اتصال به API چاپار");
