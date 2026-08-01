@@ -177,33 +177,61 @@ export async function getChaparTracking(
 
 export type ChaparState = { id: string; name: string };
 
-/** GET_STATE — لیست استان‌ها، برای ساخت نگاشت نام شهر بادرو → کد شهر چاپار */
-export async function getChaparStates(creds: ChaparCredentials): Promise<ChaparState[]> {
-  const data = await chaparRequest<{ states?: { id?: string | number; name?: string }[]; data?: { id?: string | number; name?: string }[] }>(
-    creds,
-    "/get_state",
-    {}
-  );
-  const list = data.states ?? data.data ?? [];
+/** شکل خام یک آیتم استان/شهر در پاسخ چاپار — شناسه ممکن است id/no/code باشد (چاپار از «no» استفاده می‌کند) */
+type RawChaparItem = { id?: string | number; no?: string | number; code?: string | number; name?: string };
+
+/** از هر شکل شناخته‌شده‌ی پاسخ، آرایه‌ی خام آیتم‌ها را استخراج می‌کند؛ اگر هیچ‌کدام نبود [] */
+function extractRawList(
+  data: {
+    states?: RawChaparItem[];
+    cities?: RawChaparItem[];
+    data?: RawChaparItem[];
+    objects?: { state?: RawChaparItem[]; city?: RawChaparItem[] };
+  },
+  key: "states" | "cities"
+): RawChaparItem[] {
+  const objectsKey = key === "states" ? "state" : "city";
+  return data[key] ?? data.data ?? data.objects?.[objectsKey] ?? [];
+}
+
+function mapRawItems(list: RawChaparItem[]): ChaparState[] {
   return list
-    .filter((s) => s.id != null && s.name)
-    .map((s) => ({ id: String(s.id), name: String(s.name) }));
+    .map((item) => {
+      const rawId = item.id ?? item.no ?? item.code;
+      return rawId != null && item.name ? { id: String(rawId), name: String(item.name) } : null;
+    })
+    .filter((item): item is ChaparState => item !== null);
+}
+
+/**
+ * GET_STATE — لیست استان‌ها، برای ساخت نگاشت نام شهر بادرو → کد شهر چاپار.
+ * شکل واقعی پاسخ چاپار: `{ result, message, objects: { state: [{no, name}, ...] } }`
+ * (تایید‌شده از لاگ production) — با fallback به شکل‌های دیگر (`states`/`data`)
+ * که قبلاً حدس زده شده بودند، برای مقاومت در برابر تغییرات بعدی.
+ */
+export async function getChaparStates(creds: ChaparCredentials): Promise<ChaparState[]> {
+  const data = await chaparRequest<{
+    states?: RawChaparItem[];
+    data?: RawChaparItem[];
+    objects?: { state?: RawChaparItem[] };
+  }>(creds, "/get_state", {});
+  return mapRawItems(extractRawList(data, "states"));
 }
 
 export type ChaparCity = { id: string; name: string };
 
-/** GET_CITY — لیست شهرهای یک استان (بر اساس کد استان چاپار) */
+/**
+ * GET_CITY — لیست شهرهای یک استان (بر اساس کد استان چاپار).
+ * همان شکل `objects.city` مثل `get_state`، با همان fallbackها.
+ */
 export async function getChaparCities(
   creds: ChaparCredentials,
   stateId: string
 ): Promise<ChaparCity[]> {
-  const data = await chaparRequest<{ cities?: { id?: string | number; name?: string }[]; data?: { id?: string | number; name?: string }[] }>(
-    creds,
-    "/get_city",
-    { state: stateId }
-  );
-  const list = data.cities ?? data.data ?? [];
-  return list
-    .filter((c) => c.id != null && c.name)
-    .map((c) => ({ id: String(c.id), name: String(c.name) }));
+  const data = await chaparRequest<{
+    cities?: RawChaparItem[];
+    data?: RawChaparItem[];
+    objects?: { city?: RawChaparItem[] };
+  }>(creds, "/get_city", { state: stateId });
+  return mapRawItems(extractRawList(data, "cities"));
 }
