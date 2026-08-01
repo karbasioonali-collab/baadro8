@@ -154,7 +154,15 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
           >
             <option value="internal_formula">فرمول داخلی</option>
             <option value="external_api">API شرکت</option>
-            <option value="page_automation">ربات استعلام خودکار (فقط تنظیمات — اجرا در فاز بعد)</option>
+            {/* «ربات استعلام خودکار» عمداً از این لیست حذف شده — روی production باعث
+                Internal Server Error در کل چرخه‌ی ثبت سفارش شد چون Playwright/Chromium
+                روی سرور Liara نصب نیست. تا رفع این مشکل (بخش infobaadro.md مربوطه)،
+                این گزینه نباید برای هیچ شرکتی قابل‌انتخاب باشد. */}
+            {value.pricingSourceType === "page_automation" && (
+              <option value="page_automation">
+                ربات استعلام خودکار (غیرفعال — لطفاً روش دیگری انتخاب کنید)
+              </option>
+            )}
           </Select>
           <Select
             label="روش استعلام کد رهگیری"

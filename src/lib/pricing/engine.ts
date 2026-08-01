@@ -2,13 +2,36 @@ import { prisma } from "@/lib/prisma";
 import { InternalFormulaProvider } from "./internal-formula-provider";
 import { ExternalApiProvider } from "./external-api-provider";
 import { PageAutomationProvider } from "./page-automation-provider";
-import type { PriceProvider, PriceQuoteResult } from "./types";
+import type { PriceProvider, PriceQuoteInput, PriceQuoteResult } from "./types";
 
 const providers: Record<string, PriceProvider> = {
   internal_formula: new InternalFormulaProvider(),
   external_api: new ExternalApiProvider(),
   page_automation: new PageAutomationProvider(),
 };
+
+/**
+ * فراخوانی امن provider.getQuote(): اگر یک provider (مثلاً به‌خاطر یک
+ * وابستگی خارجی مثل Playwright، یا یک API خارجی از کار افتاده) throw کند،
+ * فقط همان شرکت با available:false از نتایج حذف می‌شود — نه این‌که کل
+ * درخواست (و برای مسیرهایی مثل ثبت سفارش، کل صفحه) کرش کند.
+ */
+async function safeGetQuote(
+  provider: PriceProvider | undefined,
+  input: PriceQuoteInput
+): Promise<PriceQuoteResult> {
+  if (!provider) {
+    return { available: false, reason: "روش قیمت‌گذاری این شرکت شناخته‌شده نیست" };
+  }
+  try {
+    return await provider.getQuote(input);
+  } catch (err) {
+    return {
+      available: false,
+      reason: `خطای داخلی در محاسبه قیمت: ${err instanceof Error ? err.message : "نامشخص"}`,
+    };
+  }
+}
 
 export type CompanyQuote = {
   companyId: string;
@@ -69,8 +92,7 @@ export async function getQuotesForRequest(
 
   const results = await Promise.all(
     companies.map(async (company): Promise<CompanyQuote> => {
-      const provider = providers[company.pricingSourceType];
-      const quote = await provider.getQuote({
+      const quote = await safeGetQuote(providers[company.pricingSourceType], {
         companyId: company.id,
         serviceType,
         originCity: req.originCity,
@@ -115,8 +137,7 @@ export async function getQuoteForCompany(
     envelopePriceModifier = envelopeType ? Number(envelopeType.priceModifier) : 0;
   }
 
-  const provider = providers[company.pricingSourceType];
-  const quote = await provider.getQuote({
+  const quote = await safeGetQuote(providers[company.pricingSourceType], {
     companyId: company.id,
     serviceType,
     originCity: req.originCity,

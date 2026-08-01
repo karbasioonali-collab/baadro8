@@ -1,9 +1,18 @@
-import { chromium, type Browser, type Page } from "playwright";
 import { prisma } from "@/lib/prisma";
 import type { PriceProvider, PriceQuoteInput, PriceQuoteResult } from "./types";
+import type { Browser, Page } from "playwright";
 
 const NAV_TIMEOUT_MS = 15000;
 const ACTION_TIMEOUT_MS = 10000;
+
+/**
+ * ⚠️ کلید خاموش/روشن موقت — بعد از این‌که این موتور روی production باعث
+ * Internal Server Error در کل چرخه‌ی ثبت سفارش شد (چون Playwright/Chromium
+ * روی سرور Liara نصب نیست، بخش «باینری Chromium روی Liara از قبل نصب
+ * نیست» در infobaadro.md را ببینید)، این فیچر عمداً غیرفعال شده. تا وقتی
+ * نصب Chromium روی production حل نشود، این مقدار را true نکنید.
+ */
+const PAGE_AUTOMATION_ENABLED = false;
 
 export type AutomationFieldKey =
   | "origin"
@@ -80,6 +89,10 @@ async function fillSmart(page: Page, selector: string, value: string) {
  */
 export class PageAutomationProvider implements PriceProvider {
   async getQuote(input: PriceQuoteInput): Promise<PriceQuoteResult> {
+    if (!PAGE_AUTOMATION_ENABLED) {
+      return { available: false, reason: "ربات استعلام خودکار موقتاً غیرفعال است" };
+    }
+
     const rule = await prisma.pricingRule.findFirst({
       where: { companyId: input.companyId, sourceType: "page_automation", active: true },
     });
@@ -110,6 +123,13 @@ export class PageAutomationProvider implements PriceProvider {
 
     let browser: Browser | undefined;
     try {
+      // import پویا (نه import ثابت بالای فایل) عمداً استفاده شده: اگر
+      // خودِ ماژول playwright روی production به هر دلیلی قابل بارگذاری
+      // نباشد (مثلاً فایل‌های داخلی‌اش در build استاندالون کامل کپی نشده
+      // باشند)، خطا همینجا داخل try/catch گرفته می‌شود، نه در سطح ماژول —
+      // که در آن صورت کل src/lib/pricing/engine.ts (و به‌تبع آن کل مسیر
+      // ثبت سفارش) از کار می‌افتاد.
+      const { chromium } = await import("playwright");
       browser = await chromium.launch({ headless: true });
       const page = await browser.newPage();
       page.setDefaultTimeout(ACTION_TIMEOUT_MS);
