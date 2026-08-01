@@ -73,7 +73,9 @@ export async function getQuotesForRequest(
       const quote = await provider.getQuote({
         companyId: company.id,
         serviceType,
+        originProvince: req.originProvince,
         originCity: req.originCity,
+        destinationProvince: req.destinationProvince,
         destinationCity: req.destinationCity,
         parcelType: req.parcelType,
         weightGrams: req.weightGrams,
@@ -119,7 +121,9 @@ export async function getQuoteForCompany(
   const quote = await provider.getQuote({
     companyId: company.id,
     serviceType,
+    originProvince: req.originProvince,
     originCity: req.originCity,
+    destinationProvince: req.destinationProvince,
     destinationCity: req.destinationCity,
     parcelType: req.parcelType,
     weightGrams: req.weightGrams,
