@@ -48,7 +48,14 @@ async function getCachedStates(creds: ChaparCredentials) {
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
   const states = await getChaparStates(creds);
-  stateCache.set(key, { data: states, expiresAt: Date.now() + STATE_CACHE_TTL_MS });
+  // فقط نتیجه‌ی موفق و غیرخالی کش می‌شود. اگر [] کش می‌شد (باگی که قبلاً
+  // اینجا بود)، یک شکست موقت/تنظیم اشتباه یک‌بار می‌توانست تا ۶ ساعت
+  // (TTL) نتیجه‌ی خالی را برای همه‌ی درخواست‌های بعدی سرو کند — از جمله
+  // این‌که لاگ تشخیصی chaparRequest برای درخواست‌های بعدی اصلاً دوباره
+  // اجرا نمی‌شد چون به کش برمی‌خورد، نه به یک fetch واقعی جدید.
+  if (states.length > 0) {
+    stateCache.set(key, { data: states, expiresAt: Date.now() + STATE_CACHE_TTL_MS });
+  }
   return states;
 }
 
@@ -61,7 +68,10 @@ async function getCachedCityMap(creds: ChaparCredentials, stateId: string) {
   const map = new Map<string, string>();
   for (const c of cities) map.set(normalize(c.name), c.id);
   const entry = { raw: cities, map, expiresAt: Date.now() + CITY_CACHE_TTL_MS };
-  cityCache.set(key, entry);
+  // همان دلیل بالا: فقط نتیجه‌ی غیرخالی کش می‌شود.
+  if (cities.length > 0) {
+    cityCache.set(key, entry);
+  }
   return entry;
 }
 
