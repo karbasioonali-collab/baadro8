@@ -65,7 +65,14 @@ export async function resolveChaparCityCode(
 
     const cityMap = await getCachedCityMap(creds, state.id);
     return cityMap.get(normalize(cityName)) ?? null;
-  } catch {
+  } catch (err) {
+    // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت این‌که چاپار توی نتایج
+    // ظاهر نمی‌شود، این console.error حذف شود.
+    console.error("[Chapar] خطا در دریافت get_state/get_city برای نگاشت شهر", {
+      provinceName,
+      cityName,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
     return null;
   }
 }

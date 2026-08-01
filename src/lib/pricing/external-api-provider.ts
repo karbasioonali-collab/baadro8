@@ -49,12 +49,23 @@ export class ExternalApiProvider implements PriceProvider {
       ]);
 
       if (!originCode || !destinationCode) {
+        // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت این‌که چاپار توی نتایج
+        // ظاهر نمی‌شود، این console.error و بقیه‌ی لاگ‌های این فایل حذف شوند.
+        console.error("[Chapar] شناسایی کد شهر ناموفق بود", {
+          companyId: input.companyId,
+          originProvince: input.originProvince,
+          originCity: input.originCity,
+          originCode,
+          destinationProvince: input.destinationProvince,
+          destinationCity: input.destinationCity,
+          destinationCode,
+        });
         return { available: false, reason: "شهر مبدا یا مقصد در سامانه چاپار شناسایی نشد" };
       }
 
       const weightKg = input.parcelType === "envelope" ? 0.5 : (input.weightGrams ?? 500) / 1000;
 
-      const quote = await getChaparQuote(chaparCreds, {
+      const quotePayload = {
         origin: originCode,
         destination: destinationCode,
         // ⚠️ کد نوع سرویس («method») از مستندات رسمی چاپار تایید نشده — فعلاً
@@ -62,9 +73,15 @@ export class ExternalApiProvider implements PriceProvider {
         method: "1",
         value: input.declaredValue ?? 0,
         weight: weightKg,
-      });
+      };
+
+      const quote = await getChaparQuote(chaparCreds, quotePayload);
 
       if (quote == null) {
+        console.error("[Chapar] get_quote پاسخ معتبر (order.quote عددی) برنگرداند", {
+          companyId: input.companyId,
+          sentPayload: quotePayload,
+        });
         return { available: false, reason: "چاپار برای این مسیر قیمتی برنگرداند" };
       }
 
@@ -75,6 +92,13 @@ export class ExternalApiProvider implements PriceProvider {
         estimatedDeliveryDays: [2, 5],
       };
     } catch (err) {
+      // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت این‌که چاپار توی نتایج
+      // ظاهر نمی‌شود، این console.error حذف شود.
+      console.error("[Chapar] استعلام قیمت با خطا مواجه شد", {
+        companyId: input.companyId,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorStack: err instanceof Error ? err.stack : undefined,
+      });
       return {
         available: false,
         reason: `خطا در استعلام از API چاپار: ${err instanceof Error ? err.message : "خطای نامشخص"}`,
