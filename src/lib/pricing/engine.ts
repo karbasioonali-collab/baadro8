@@ -95,7 +95,9 @@ export async function getQuotesForRequest(
       const quote = await safeGetQuote(providers[company.pricingSourceType], {
         companyId: company.id,
         serviceType,
+        originProvince: req.originProvince,
         originCity: req.originCity,
+        destinationProvince: req.destinationProvince,
         destinationCity: req.destinationCity,
         parcelType: req.parcelType,
         weightGrams: req.weightGrams,
@@ -140,7 +142,9 @@ export async function getQuoteForCompany(
   const quote = await safeGetQuote(providers[company.pricingSourceType], {
     companyId: company.id,
     serviceType,
+    originProvince: req.originProvince,
     originCity: req.originCity,
+    destinationProvince: req.destinationProvince,
     destinationCity: req.destinationCity,
     parcelType: req.parcelType,
     weightGrams: req.weightGrams,
