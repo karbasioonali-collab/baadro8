@@ -1,4 +1,4 @@
-import { getChaparCities, getChaparStates, type ChaparCredentials } from "./client";
+import { getChaparCities, getChaparStates, type ChaparCredentials, type ChaparCity } from "./client";
 
 /**
  * نگاشت نام استان/شهر بادرو به کد شهر چاپار.
@@ -16,14 +16,26 @@ const STATE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const CITY_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const stateCache = new Map<string, { data: { id: string; name: string }[]; expiresAt: number }>();
-const cityCache = new Map<string, { data: Map<string, string>; expiresAt: number }>();
+const cityCache = new Map<
+  string,
+  { raw: ChaparCity[]; map: Map<string, string>; expiresAt: number }
+>();
 
+/**
+ * یکسان‌سازی نام برای مقایسه‌ی نام شهر/استان بادرو با چاپار: فاصله‌های
+ * اضافه/نامرئی (از جمله نیم‌فاصله و NBSP) حذف، حروف عربی معادل فارسی
+ * (ي→ی، ك→ک) یکسان، و پیشوندهای رایج «استان »/«شهرستان »/«شهر » که
+ * ممکن است فقط در یک طرف باشند حذف می‌شوند.
+ */
 function normalize(name: string): string {
   return name
+    .replace(/[‌​ ]/g, " ") // نیم‌فاصله، zero-width space، NBSP
     .trim()
     .replace(/[یي]/g, "ی")
     .replace(/[کك]/g, "ک")
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    .replace(/^(استان|شهرستان|شهر)\s+/, "")
+    .trim();
 }
 
 function credsKey(creds: ChaparCredentials): string {
@@ -43,13 +55,14 @@ async function getCachedStates(creds: ChaparCredentials) {
 async function getCachedCityMap(creds: ChaparCredentials, stateId: string) {
   const key = `${credsKey(creds)}::${stateId}`;
   const cached = cityCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
+  if (cached && cached.expiresAt > Date.now()) return cached;
 
   const cities = await getChaparCities(creds, stateId);
   const map = new Map<string, string>();
   for (const c of cities) map.set(normalize(c.name), c.id);
-  cityCache.set(key, { data: map, expiresAt: Date.now() + CITY_CACHE_TTL_MS });
-  return map;
+  const entry = { raw: cities, map, expiresAt: Date.now() + CITY_CACHE_TTL_MS };
+  cityCache.set(key, entry);
+  return entry;
 }
 
 /** نام استان و شهر بادرو را می‌گیرد و کد شهر چاپار را برمی‌گرداند؛ در صورت عدم تطبیق یا خطای شبکه، null */
@@ -61,10 +74,30 @@ export async function resolveChaparCityCode(
   try {
     const states = await getCachedStates(creds);
     const state = states.find((s) => normalize(s.name) === normalize(provinceName));
-    if (!state) return null;
+    if (!state) {
+      // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت mismatch، این console.error حذف شود.
+      console.error("[Chapar] استان بادرو در لیست get_state چاپار پیدا نشد", {
+        searchedProvince: provinceName,
+        normalizedSearched: normalize(provinceName),
+        rawStatesFromChapar: states.map((s) => s.name),
+      });
+      return null;
+    }
 
-    const cityMap = await getCachedCityMap(creds, state.id);
-    return cityMap.get(normalize(cityName)) ?? null;
+    const { raw, map } = await getCachedCityMap(creds, state.id);
+    const code = map.get(normalize(cityName));
+    if (!code) {
+      // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت mismatch، این console.error حذف شود.
+      console.error("[Chapar] شهر بادرو در لیست get_city چاپار (برای همین استان) پیدا نشد", {
+        province: provinceName,
+        searchedCity: cityName,
+        normalizedSearched: normalize(cityName),
+        chaparStateId: state.id,
+        rawCitiesFromChapar: raw.map((c) => c.name),
+      });
+      return null;
+    }
+    return code;
   } catch (err) {
     // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت این‌که چاپار توی نتایج
     // ظاهر نمی‌شود، این console.error حذف شود.
