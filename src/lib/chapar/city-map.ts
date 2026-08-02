@@ -75,12 +75,27 @@ async function getCachedCityMap(creds: ChaparCredentials, stateId: string) {
   return entry;
 }
 
-/** نام استان و شهر بادرو را می‌گیرد و کد شهر چاپار را برمی‌گرداند؛ در صورت عدم تطبیق یا خطای شبکه، null */
+/**
+ * نتیجه‌ی کامل نگاشت — علاوه بر کد چاپار، اسم شهر/استانی که این کد واقعاً
+ * بهش match شده را هم برمی‌گرداند. دلیل: چون تطبیق بر اساس اسم انجام
+ * می‌شود، اگر در لیست چاپار چند شهر/منطقه با اسم مشابه وجود داشته باشد
+ * (مثلاً یک شهرک با اسمی شبیه یک شهر بزرگ، در یک استان دیگر)، صرفاً دیدن
+ * «کد پیدا شد» تضمین نمی‌کند که آن کد واقعاً مال شهر درستی است — باید
+ * اسم/استان واقعی که match شده هم دیده شود تا این احتمال رد شود.
+ */
+export type ChaparCityResolution = {
+  code: string;
+  matchedCityName: string;
+  matchedStateId: string;
+  matchedStateName: string;
+};
+
+/** نام استان و شهر بادرو را می‌گیرد و نگاشت کامل به چاپار را برمی‌گرداند؛ در صورت عدم تطبیق یا خطای شبکه، null */
 export async function resolveChaparCityCode(
   creds: ChaparCredentials,
   provinceName: string,
   cityName: string
-): Promise<string | null> {
+): Promise<ChaparCityResolution | null> {
   try {
     const states = await getCachedStates(creds);
     const state = states.find((s) => normalize(s.name) === normalize(provinceName));
@@ -107,7 +122,15 @@ export async function resolveChaparCityCode(
       });
       return null;
     }
-    return code;
+
+    // آیتم خامی که واقعاً match شده (برای لاگ‌کردن اسم دقیق چاپار، نه فقط کد)
+    const matchedItem = raw.find((c) => c.id === code);
+    return {
+      code,
+      matchedCityName: matchedItem?.name ?? "؟",
+      matchedStateId: state.id,
+      matchedStateName: state.name,
+    };
   } catch (err) {
     // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت این‌که چاپار توی نتایج
     // ظاهر نمی‌شود، این console.error حذف شود.

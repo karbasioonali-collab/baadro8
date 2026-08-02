@@ -56,25 +56,50 @@ export class ExternalApiProvider implements PriceProvider {
 
       const chaparCreds = { baseUrl: company.apiBaseUrl, ...creds };
 
-      const [originCode, destinationCode] = await Promise.all([
+      const [originResolution, destinationResolution] = await Promise.all([
         resolveChaparCityCode(chaparCreds, input.originProvince, input.originCity),
         resolveChaparCityCode(chaparCreds, input.destinationProvince, input.destinationCity),
       ]);
 
-      if (!originCode || !destinationCode) {
+      if (!originResolution || !destinationResolution) {
         // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت این‌که چاپار توی نتایج
         // ظاهر نمی‌شود، این console.error و بقیه‌ی لاگ‌های این فایل حذف شوند.
         console.error("[Chapar] شناسایی کد شهر ناموفق بود", {
           companyId: input.companyId,
           originProvince: input.originProvince,
           originCity: input.originCity,
-          originCode,
+          originResolution,
           destinationProvince: input.destinationProvince,
           destinationCity: input.destinationCity,
-          destinationCode,
+          destinationResolution,
         });
         return { available: false, reason: "شهر مبدا یا مقصد در سامانه چاپار شناسایی نشد" };
       }
+
+      const originCode = originResolution.code;
+      const destinationCode = destinationResolution.code;
+
+      // TODO(لاگ موقت تشخیصی): بررسی این‌که کد پیدا‌شده واقعاً مال شهر/استان
+      // درستی است (نه یک هم‌نام تصادفی در استان دیگر) — بعد از تایید، حذف شود.
+      console.error("[Chapar] نگاشت شهر مبدا/مقصد به کد چاپار (برای تایید صحت match)", {
+        companyId: input.companyId,
+        origin: {
+          badroProvince: input.originProvince,
+          badroCity: input.originCity,
+          chaparCode: originResolution.code,
+          chaparMatchedCityName: originResolution.matchedCityName,
+          chaparMatchedStateId: originResolution.matchedStateId,
+          chaparMatchedStateName: originResolution.matchedStateName,
+        },
+        destination: {
+          badroProvince: input.destinationProvince,
+          badroCity: input.destinationCity,
+          chaparCode: destinationResolution.code,
+          chaparMatchedCityName: destinationResolution.matchedCityName,
+          chaparMatchedStateId: destinationResolution.matchedStateId,
+          chaparMatchedStateName: destinationResolution.matchedStateName,
+        },
+      });
 
       let weightKg: number;
       if (input.parcelType === "envelope") {
@@ -103,27 +128,52 @@ export class ExternalApiProvider implements PriceProvider {
           ? Math.round(input.declaredValue * 10)
           : NOMINAL_DECLARED_VALUE_RIAL;
 
-      const quotePayload = {
-        origin: originCode,
-        destination: destinationCode,
-        // ⚠️ کد نوع سرویس («method») از مستندات رسمی چاپار تایید نشده — فعلاً
-        // مقدار پیش‌فرض «۱» فرستاده می‌شود. باید با پشتیبانی/مستندات چاپار تایید شود.
-        method: "1",
-        value: declaredValueRial,
-        weight: weightKg,
-      };
+      // TODO(تست موقت تشخیصی): کد نوع سرویس («method») از مستندات رسمی چاپار
+      // تایید نشده. به‌جای هاردکد یک مقدار، چند کد محتمل به‌ترتیب امتحان
+      // می‌شوند (هرکدام جواب داد، همان استفاده می‌شود و بقیه امتحان نمی‌شوند)
+      // تا مشخص شود کدام برای این حساب/مسیر معتبر است. بعد از پیدا شدن مقدار
+      // درست، این آرایه باید با همان یک مقدار ثابت جایگزین شود.
+      const CANDIDATE_METHODS: { code: string; label: string }[] = [
+        { code: "1", label: "زمینی" },
+        { code: "6", label: "هوایی" },
+        { code: "11", label: "پستی" },
+        { code: "35", label: "چاپار پلاس" },
+        { code: "97", label: "پاکت" },
+      ];
 
-      const quote = await getChaparQuote(chaparCreds, quotePayload);
+      let quote: Awaited<ReturnType<typeof getChaparQuote>> = null;
+      let workingMethod: string | null = null;
+
+      for (const candidate of CANDIDATE_METHODS) {
+        const attemptPayload = {
+          origin: originCode,
+          destination: destinationCode,
+          method: candidate.code,
+          value: declaredValueRial,
+          weight: weightKg,
+        };
+        const attempt = await getChaparQuote(chaparCreds, attemptPayload);
+        console.error(`[Chapar] تست method=${candidate.code} (${candidate.label})`, {
+          companyId: input.companyId,
+          success: attempt != null,
+          quote: attempt?.total,
+        });
+        if (attempt != null) {
+          quote = attempt;
+          workingMethod = candidate.code;
+          break;
+        }
+      }
 
       if (quote == null) {
-        // جزئیات کامل (origin/destination ارسالی، پیام واقعی چاپار) همین الان
-        // توسط getChaparQuote در client.ts لاگ شد؛ این‌جا فقط companyId برای
-        // ارتباط‌دادن آن لاگ به همین شرکت اضافه می‌شود.
-        console.error("[Chapar] در نتیجه، این شرکت از مقایسه قیمت حذف شد", {
+        console.error("[Chapar] هیچ‌کدام از methodهای تست‌شده جواب ندادند — این شرکت از مقایسه قیمت حذف شد", {
           companyId: input.companyId,
+          testedMethods: CANDIDATE_METHODS.map((m) => m.code),
         });
         return { available: false, reason: "چاپار برای این مسیر قیمتی برنگرداند" };
       }
+
+      console.error("[Chapar] method کارآمد پیدا شد", { companyId: input.companyId, workingMethod });
 
       return {
         available: true,
