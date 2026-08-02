@@ -128,52 +128,23 @@ export class ExternalApiProvider implements PriceProvider {
           ? Math.round(input.declaredValue * 10)
           : NOMINAL_DECLARED_VALUE_RIAL;
 
-      // TODO(تست موقت تشخیصی): کد نوع سرویس («method») از مستندات رسمی چاپار
-      // تایید نشده. به‌جای هاردکد یک مقدار، چند کد محتمل به‌ترتیب امتحان
-      // می‌شوند (هرکدام جواب داد، همان استفاده می‌شود و بقیه امتحان نمی‌شوند)
-      // تا مشخص شود کدام برای این حساب/مسیر معتبر است. بعد از پیدا شدن مقدار
-      // درست، این آرایه باید با همان یک مقدار ثابت جایگزین شود.
-      const CANDIDATE_METHODS: { code: string; label: string }[] = [
-        { code: "1", label: "زمینی" },
-        { code: "6", label: "هوایی" },
-        { code: "11", label: "پستی" },
-        { code: "35", label: "چاپار پلاس" },
-        { code: "97", label: "پاکت" },
-      ];
-
-      let quote: Awaited<ReturnType<typeof getChaparQuote>> = null;
-      let workingMethod: string | null = null;
-
-      for (const candidate of CANDIDATE_METHODS) {
-        const attemptPayload = {
-          origin: originCode,
-          destination: destinationCode,
-          method: candidate.code,
-          value: declaredValueRial,
-          weight: weightKg,
-        };
-        const attempt = await getChaparQuote(chaparCreds, attemptPayload);
-        console.error(`[Chapar] تست method=${candidate.code} (${candidate.label})`, {
-          companyId: input.companyId,
-          success: attempt != null,
-          quote: attempt?.total,
-        });
-        if (attempt != null) {
-          quote = attempt;
-          workingMethod = candidate.code;
-          break;
-        }
-      }
+      const quote = await getChaparQuote(chaparCreds, {
+        origin: originCode,
+        destination: destinationCode,
+        // طبق نمونه‌ی تایید‌شده‌ی پشتیبانی چاپار، «۱» (زمینی) مقدار معتبر است.
+        method: "1",
+        value: declaredValueRial,
+        weight: weightKg,
+      });
 
       if (quote == null) {
-        console.error("[Chapar] هیچ‌کدام از methodهای تست‌شده جواب ندادند — این شرکت از مقایسه قیمت حذف شد", {
+        // پیام دقیق چاپار همین الان توسط getChaparQuote در client.ts لاگ شد؛
+        // این‌جا فقط companyId برای ارتباط‌دادن آن لاگ به همین شرکت اضافه می‌شود.
+        console.error("[Chapar] در نتیجه، این شرکت از مقایسه قیمت حذف شد", {
           companyId: input.companyId,
-          testedMethods: CANDIDATE_METHODS.map((m) => m.code),
         });
         return { available: false, reason: "چاپار برای این مسیر قیمتی برنگرداند" };
       }
-
-      console.error("[Chapar] method کارآمد پیدا شد", { companyId: input.companyId, workingMethod });
 
       return {
         available: true,

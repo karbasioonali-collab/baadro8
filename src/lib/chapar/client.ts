@@ -102,42 +102,86 @@ async function chaparRequest<T>(
 export type ChaparQuoteResult = { total: number; costs?: Record<string, number> };
 
 /**
- * GET_QUOTE — استعلام قیمت. طبق مستندات ارائه‌شده: origin/destination کد شهر
- * چاپار، method نوع سرویس، value ارزش کالا (ریال)، weight وزن (کیلوگرم).
- * خروجی مورد انتظار: order.quote (قیمت کل) + ریز هزینه‌ها.
- * ⚠️ مقدار دقیق `method` (کد نوع سرویس) از مستندات رسمی چاپار تایید نشده —
- * فعلاً با یک مقدار پیش‌فرض فراخوانی می‌شود، باید با پشتیبانی/مستندات چاپار
- * تایید و در صورت نیاز قابل‌تنظیم شود.
+ * GET_QUOTE از بقیه‌ی endpointهای چاپار متفاوت است — طبق تایید مستقیم
+ * پشتیبانی چاپار (نه حدس):
+ * - احراز هویت با هدر ثابت `APP-AUTH` است، نه یوزرنیم/رمز در بدنه.
+ *   این مقدار یک ثابت سطح‌اپلیکیشن است (مشابه یک app key عمومی)، نه
+ *   credential مخصوص حساب بادرو — به همین دلیل هاردکد است، نه از
+ *   Company.apiKey خوانده می‌شود.
+ * - بدنه multipart/form-data است، با یک فیلد به اسم «input» که مقدارش
+ *   خودِ رشته‌ی JSON.stringify‌شده‌ی `{ order: {...} }` است (نه JSON خام).
+ * - `sender_code`/`receiver_code` هم طبق تایید پشتیبانی چاپار «۱۰۰۰»
+ *   (کد عمومی/پیش‌فرض) است تا وقتی قرارداد بسته و کد اختصاصی گرفته شود.
  */
+const CHAPAR_QUOTE_APP_AUTH_HEADER = "aW9zX2N1c3RvbWVyX2FwcDpUUFhAMjAxNg==";
+
 export async function getChaparQuote(
   creds: ChaparCredentials,
   params: { origin: string; destination: string; method: string; value: number; weight: number }
 ): Promise<ChaparQuoteResult | null> {
-  const data = await chaparRequest<{
-    result?: boolean;
-    message?: string;
-    order?: { quote?: number; costs?: Record<string, number>; cost_breakdown?: Record<string, number> };
-    // شکل واقعی get_state/get_city نشان داد چاپار داده را داخل objects می‌گذارد —
-    // احتمال دارد quote هم همین‌جا باشد؛ به‌عنوان fallback اضافه‌ای چک می‌شود.
-    objects?: { quote?: number; order?: { quote?: number } };
-  }>(creds, "/get_quote", params);
+  const order = {
+    origin: params.origin,
+    destination: params.destination,
+    weight: String(params.weight),
+    value: String(params.value),
+    method: params.method,
+    sender_code: "1000",
+    receiver_code: "1000",
+    cod: "0",
+  };
 
-  const quote = data?.order?.quote ?? data?.objects?.quote ?? data?.objects?.order?.quote;
-  if (typeof quote !== "number" || !Number.isFinite(quote)) {
-    // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت شکست get_quote، این console.error حذف شود.
-    console.error("[Chapar] get_quote نتیجه‌ی معتبر (quote عددی) نداد", {
-      sentOrigin: params.origin,
-      sentDestination: params.destination,
-      sentMethod: params.method,
-      sentWeight: params.weight,
-      sentValue: params.value,
-      chaparResult: data?.result,
-      chaparMessage: data?.message,
+  const form = new FormData();
+  form.append("input", JSON.stringify({ order }));
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${creds.baseUrl.replace(/\/$/, "")}/get_quote`, {
+      method: "POST",
+      headers: { "APP-AUTH": CHAPAR_QUOTE_APP_AUTH_HEADER },
+      body: form,
+      signal: controller.signal,
     });
-    return null;
-  }
 
-  return { total: quote, costs: data.order?.costs ?? data.order?.cost_breakdown };
+    const rawText = await res.text();
+
+    if (!res.ok) {
+      throw new ChaparApiError(`چاپار HTTP ${res.status}: ${rawText.slice(0, 500)}`);
+    }
+
+    let data: {
+      result?: boolean;
+      message?: string;
+      order?: { quote?: number; costs?: Record<string, number> };
+    };
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      throw new ChaparApiError(
+        `پاسخ get_quote چاپار JSON معتبر نبود: ${parseErr instanceof Error ? parseErr.message : "نامشخص"}`
+      );
+    }
+
+    const quote = data.order?.quote;
+    if (typeof quote !== "number" || !Number.isFinite(quote)) {
+      // لاگ ساده‌ی فقط-مربوط-به-get_quote — پیام دقیق چاپار را نشان می‌دهد.
+      console.error("[Chapar] get_quote قیمت معتبر برنگرداند", {
+        sentOrder: order,
+        chaparResult: data.result,
+        chaparMessage: data.message,
+      });
+      return null;
+    }
+
+    return { total: quote, costs: data.order?.costs };
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ChaparApiError("تایم‌اوت اتصال به get_quote چاپار");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export type ChaparTrackingResult = {
