@@ -116,9 +116,11 @@ export class ExternalApiProvider implements PriceProvider {
       const quote = await getChaparQuote(chaparCreds, quotePayload);
 
       if (quote == null) {
-        console.error("[Chapar] get_quote پاسخ معتبر (order.quote عددی) برنگرداند", {
+        // جزئیات کامل (origin/destination ارسالی، پیام واقعی چاپار) همین الان
+        // توسط getChaparQuote در client.ts لاگ شد؛ این‌جا فقط companyId برای
+        // ارتباط‌دادن آن لاگ به همین شرکت اضافه می‌شود.
+        console.error("[Chapar] در نتیجه، این شرکت از مقایسه قیمت حذف شد", {
           companyId: input.companyId,
-          sentPayload: quotePayload,
         });
         return { available: false, reason: "چاپار برای این مسیر قیمتی برنگرداند" };
       }

@@ -114,11 +114,28 @@ export async function getChaparQuote(
   params: { origin: string; destination: string; method: string; value: number; weight: number }
 ): Promise<ChaparQuoteResult | null> {
   const data = await chaparRequest<{
+    result?: boolean;
+    message?: string;
     order?: { quote?: number; costs?: Record<string, number>; cost_breakdown?: Record<string, number> };
+    // شکل واقعی get_state/get_city نشان داد چاپار داده را داخل objects می‌گذارد —
+    // احتمال دارد quote هم همین‌جا باشد؛ به‌عنوان fallback اضافه‌ای چک می‌شود.
+    objects?: { quote?: number; order?: { quote?: number } };
   }>(creds, "/get_quote", params);
 
-  const quote = data?.order?.quote;
-  if (typeof quote !== "number" || !Number.isFinite(quote)) return null;
+  const quote = data?.order?.quote ?? data?.objects?.quote ?? data?.objects?.order?.quote;
+  if (typeof quote !== "number" || !Number.isFinite(quote)) {
+    // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت شکست get_quote، این console.error حذف شود.
+    console.error("[Chapar] get_quote نتیجه‌ی معتبر (quote عددی) نداد", {
+      sentOrigin: params.origin,
+      sentDestination: params.destination,
+      sentMethod: params.method,
+      sentWeight: params.weight,
+      sentValue: params.value,
+      chaparResult: data?.result,
+      chaparMessage: data?.message,
+    });
+    return null;
+  }
 
   return { total: quote, costs: data.order?.costs ?? data.order?.cost_breakdown };
 }
