@@ -115,6 +115,39 @@ export type ChaparQuoteResult = { total: number; costs?: Record<string, number> 
  */
 const CHAPAR_QUOTE_APP_AUTH_HEADER = "aW9zX2N1c3RvbWVyX2FwcDpUUFhAMjAxNg==";
 
+type ChaparQuoteResponse = {
+  result?: boolean;
+  message?: string;
+  quote?: unknown;
+  order?: { quote?: unknown; costs?: Record<string, number> };
+  objects?: { quote?: unknown; order?: { quote?: unknown } };
+};
+
+/** یک مقدار (عدد یا رشته‌ی عددی — چون چاپار در درخواست همه‌چیز را رشته می‌فرستد و احتمال دارد در پاسخ هم همین‌طور باشد) را به عدد معتبر تبدیل می‌کند؛ در غیر این صورت null */
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+/**
+ * قیمت را از چند مسیر محتمل استخراج می‌کند — چون شکل دقیق پاسخ موفق
+ * get_quote هنوز تایید نشده (بر خلاف بدنه‌ی درخواست که با پشتیبانی
+ * چاپار تایید شد)، و الگوی get_state/get_city نشان داد چاپار گاهی داده
+ * را داخل `objects` تودرتو می‌گذارد، نه مستقیم.
+ */
+function extractQuote(data: ChaparQuoteResponse): number | null {
+  return (
+    toFiniteNumber(data.order?.quote) ??
+    toFiniteNumber(data.objects?.order?.quote) ??
+    toFiniteNumber(data.objects?.quote) ??
+    toFiniteNumber(data.quote)
+  );
+}
+
 export async function getChaparQuote(
   creds: ChaparCredentials,
   params: { origin: string; destination: string; method: string; value: number; weight: number }
@@ -145,15 +178,19 @@ export async function getChaparQuote(
 
     const rawText = await res.text();
 
+    // این لاگ عمداً همیشه (نه فقط موقع شکست) چاپ می‌شود و موقت نیست —
+    // هزینه‌ای ندارد و برای هر بررسی بعدی شکل واقعی پاسخ چاپار را
+    // بدون نیاز به دیپلوی جدید در دسترس نگه می‌دارد.
+    console.error("[Chapar] get_quote — بدنه‌ی خام کامل پاسخ", {
+      httpStatus: res.status,
+      rawResponseBody: rawText,
+    });
+
     if (!res.ok) {
       throw new ChaparApiError(`چاپار HTTP ${res.status}: ${rawText.slice(0, 500)}`);
     }
 
-    let data: {
-      result?: boolean;
-      message?: string;
-      order?: { quote?: number; costs?: Record<string, number> };
-    };
+    let data: ChaparQuoteResponse;
     try {
       data = JSON.parse(rawText);
     } catch (parseErr) {
@@ -162,10 +199,9 @@ export async function getChaparQuote(
       );
     }
 
-    const quote = data.order?.quote;
-    if (typeof quote !== "number" || !Number.isFinite(quote)) {
-      // لاگ ساده‌ی فقط-مربوط-به-get_quote — پیام دقیق چاپار را نشان می‌دهد.
-      console.error("[Chapar] get_quote قیمت معتبر برنگرداند", {
+    const quote = extractQuote(data);
+    if (quote == null) {
+      console.error("[Chapar] get_quote قیمت معتبر برنگرداند (هیچ‌کدام از مسیرهای شناخته‌شده)", {
         sentOrder: order,
         chaparResult: data.result,
         chaparMessage: data.message,
