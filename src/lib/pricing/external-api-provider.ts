@@ -146,10 +146,24 @@ export class ExternalApiProvider implements PriceProvider {
         return { available: false, reason: "چاپار برای این مسیر قیمتی برنگرداند" };
       }
 
+      // quote.total (و quote.costs) از get_quote چاپار بر حسب ریال است —
+      // تایید شده با مقایسه‌ی مستقیم با ماشین‌حساب رسمی چاپار (کرج→قم:
+      // چاپار ۱,۵۵۷,۱۶۰ ریال داد، بادرو بدون این تبدیل همان عدد را به
+      // اشتباه به‌عنوان تومان نشان می‌داد — یعنی ۱۰ برابر واقعی). بقیه‌ی
+      // سیستم بادرو (نمایش، مقایسه با شرکت‌های دیگر، ثبت سفارش) همه‌جا
+      // تومان است، پس همین‌جا (نقطه‌ی خروجی از این provider، تنها جایی
+      // که provider دیگری را تحت تاثیر قرار نمی‌دهد) بر ۱۰ تقسیم می‌شود.
+      const priceToman = Math.round(quote.total / 10);
+      const breakdownToman = quote.costs
+        ? Object.fromEntries(
+            Object.entries(quote.costs).map(([key, rialValue]) => [key, Math.round(rialValue / 10)])
+          )
+        : { قیمت_کل: priceToman };
+
       return {
         available: true,
-        price: Math.round(quote.total),
-        breakdown: quote.costs ?? { قیمت_کل: Math.round(quote.total) },
+        price: priceToman,
+        breakdown: breakdownToman,
         estimatedDeliveryDays: [2, 5],
       };
     } catch (err) {
