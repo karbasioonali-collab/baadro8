@@ -7,6 +7,19 @@ import {
 import { resolveChaparCityCode } from "@/lib/chapar/city-map";
 import type { PriceProvider, PriceQuoteInput, PriceQuoteResult } from "./types";
 
+/** حداقل وزن معتبر برای بسته (کیلوگرم) — دقیقاً همان حداقلی که خودِ بادرو موقع ثبت سفارش اجبار می‌کند (packageSchema، ۱۰۰ گرم). وزن کمتر از این یعنی داده هنوز کامل نیست (مثلاً درخواست پیش‌نمایش زنده وسط تایپ کاربر)، نه یک سفارش واقعی. */
+const MIN_VALID_WEIGHT_KG = 0.1;
+
+/**
+ * ⚠️ مقدار پیش‌فرض «ارزش کالا» وقتی مشتری چیزی وارد نکرده (فیلد اختیاری
+ * است). صفر خام فرستاده نمی‌شود چون مشخص نیست چاپار با value=0 هم quote
+ * درست می‌دهد یا نه (مستندات رسمی تایید نشده) — یک مقدار نمادین کوچک
+ * جایگزین می‌شود. **این فرض تایید‌نشده است** و اگر چاپار حق‌بیمه/هزینه را
+ * متناسب با value حساب کند، ممکن است روی مبلغ نهایی quote اثر بگذارد؛
+ * باید با مستندات/پشتیبانی چاپار تایید و در صورت نیاز اصلاح شود.
+ */
+const NOMINAL_DECLARED_VALUE_RIAL = 100000;
+
 /**
  * روش pricing_source_type = external_api — بادرو در این حالت مصرف‌کننده
  * (Client) است. اولین و فعلاً تنها provider واقعی پیاده‌شده، چاپار
@@ -63,7 +76,32 @@ export class ExternalApiProvider implements PriceProvider {
         return { available: false, reason: "شهر مبدا یا مقصد در سامانه چاپار شناسایی نشد" };
       }
 
-      const weightKg = input.parcelType === "envelope" ? 0.5 : (input.weightGrams ?? 500) / 1000;
+      let weightKg: number;
+      if (input.parcelType === "envelope") {
+        weightKg = 0.5;
+      } else {
+        // تبدیل گرم (واحد ذخیره‌شده در بادرو، Order.weightGrams) به کیلوگرم
+        // (واحد مورد انتظار چاپار) — همیشه دقیقاً تقسیم بر ۱۰۰۰.
+        weightKg = (input.weightGrams ?? 0) / 1000;
+        if (weightKg < MIN_VALID_WEIGHT_KG) {
+          // یعنی weightGrams اصلاً ست نشده یا مقدار غیرمنطقی کوچکی دارد
+          // (مثلاً درخواست پیش‌نمایش زنده‌ی قیمت وسط تایپ‌کردن وزن توسط
+          // کاربر، قبل از کامل شدن عدد) — نه یک سفارش واقعی و کامل. به‌جای
+          // فرستادن یک وزن بی‌معنی به چاپار (که می‌تواند quote نادرست
+          // بدهد)، همین‌جا available:false برمی‌گردانیم.
+          return { available: false, reason: "وزن مرسوله برای استعلام قیمت هنوز کامل/معتبر نیست" };
+        }
+      }
+
+      // Order.declaredValue در بادرو بر حسب تومان ذخیره/جمع‌آوری می‌شود
+      // (برچسب فرم: «ارزش مرسوله (تومان، اختیاری)»)، ولی طبق مستندات
+      // ارائه‌شده «value» در get_quote چاپار بر حسب ریال است — پس همیشه
+      // در ۱۰ ضرب می‌شود. اگر مشتری چیزی وارد نکرده (۰/خالی)، به‌جای صفر
+      // خام یک مقدار نمادین ثابت فرستاده می‌شود (توضیح کامل بالای فایل).
+      const declaredValueRial =
+        input.declaredValue != null && input.declaredValue > 0
+          ? Math.round(input.declaredValue * 10)
+          : NOMINAL_DECLARED_VALUE_RIAL;
 
       const quotePayload = {
         origin: originCode,
@@ -71,7 +109,7 @@ export class ExternalApiProvider implements PriceProvider {
         // ⚠️ کد نوع سرویس («method») از مستندات رسمی چاپار تایید نشده — فعلاً
         // مقدار پیش‌فرض «۱» فرستاده می‌شود. باید با پشتیبانی/مستندات چاپار تایید شود.
         method: "1",
-        value: input.declaredValue ?? 0,
+        value: declaredValueRial,
         weight: weightKg,
       };
 
