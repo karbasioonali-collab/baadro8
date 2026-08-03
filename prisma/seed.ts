@@ -44,23 +44,26 @@ async function seedHomepageSlides() {
   // است در همین فایل عوض شود) تا با هر تغییر تصویر/متن یک اسلاید، همان ردیف
   // موجود در دیتابیس‌های از قبل seed‌شده (مثل production) روی هر دیپلوی جدید
   // به‌روز شود، نه اینکه به‌خاطر خالی نبودن جدول کلاً نادیده گرفته شود.
+  // این سه اسلاید طرح کامل و آماده‌اند (متن فارسی داخل خودِ تصویر پخته شده)،
+  // پس دیگر متن جدا روی تصویر نمایش داده نمی‌شود (HomeSlider.tsx) — عنوان
+  // فقط برای aria-label (خوانا بودن برای screen reader) نگه داشته شده.
   const slides = [
     {
-      imageUrl: "/slides/slide-1-intro.png",
-      title: "ارسال مرسوله، ساده و مطمئن",
-      description: "قیمت چند شرکت پستی و پیک را در چند ثانیه مقایسه کنید",
+      imageUrl: "/slides/slide1.jpg",
+      title: "مقایسه قیمت در چند ثانیه",
+      description: null,
       orderIndex: 0,
     },
     {
-      imageUrl: "/slides/slide-2-price.png",
-      title: "مقایسه قیمت در چند ثانیه",
-      description: "ارزان‌ترین گزینه بین چندین شرکت پستی و پیک را پیدا کنید",
+      imageUrl: "/slides/slide2.jpg",
+      title: "ارسال به تمام نقاط ایران",
+      description: null,
       orderIndex: 1,
     },
     {
-      imageUrl: "/slides/slide-3-postal-flight.png",
-      title: "ارسال بین‌شهری به سراسر ایران",
-      description: "با شبکه‌ای از شرکت‌های پستی و باربری معتبر، مرسوله شما به هر نقطه از ایران می‌رسد",
+      imageUrl: "/slides/slide3.jpg",
+      title: "ارسال درون‌شهری",
+      description: null,
       orderIndex: 2,
     },
   ];

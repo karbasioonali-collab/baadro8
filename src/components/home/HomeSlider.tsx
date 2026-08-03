@@ -35,35 +35,21 @@ export function HomeSlider({ slides }: { slides: Slide[] }) {
         style={{ transform: `translateX(-${index * 100}%)` }}
       >
         {slides.map((slide) => {
+          // اسلایدها طرح کامل و آماده‌اند (عنوان/توضیح داخل خودِ تصویر پخته
+          // شده)، پس دیگر رنگ‌آمیزی/اسکریم تیره/متن جدا روی تصویر گذاشته
+          // نمی‌شود — فقط خودِ تصویر تمیز نمایش داده می‌شود. عنوان همچنان
+          // به‌عنوان aria-label برای screen reader نگه داشته شده.
           const content = (
             <div
-              className="relative h-44 sm:h-64 w-full shrink-0 flex items-center px-6 sm:px-12"
+              className="relative h-44 sm:h-64 w-full shrink-0"
+              role="img"
+              aria-label={slide.title}
               style={{
-                backgroundImage: `linear-gradient(120deg, var(--color-brand-blue-300), var(--color-brand-green-300)), url(${slide.imageUrl})`,
+                backgroundImage: `url(${slide.imageUrl})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-                backgroundBlendMode: "overlay",
               }}
-            >
-              {/* اسکریم تیره برای خوانا ماندن متن روی هر تصویر پس‌زمینه‌ای، حتی تصاویر شلوغ */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(90deg, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0.15) 55%, transparent 80%)",
-                }}
-              />
-              <div className="relative max-w-lg text-white" dir="rtl">
-                <h2 className="text-xl sm:text-3xl font-bold drop-shadow-sm">
-                  {slide.title}
-                </h2>
-                {slide.description && (
-                  <p className="mt-2 text-sm sm:text-base opacity-95 drop-shadow-sm">
-                    {slide.description}
-                  </p>
-                )}
-              </div>
-            </div>
+            />
           );
 
           return (
