@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getCompanySession } from "@/lib/auth/session";
 import { CompanyLoginForm } from "@/components/auth/CompanyLoginForm";
 import { Card } from "@/components/ui/Card";
 import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = { title: "ورود شرکت‌های طرف قرارداد" };
 
-export default async function CompanyLoginPage() {
-  const session = await getCompanySession();
-  if (session) redirect("/company");
-
+export default function CompanyLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-sm">

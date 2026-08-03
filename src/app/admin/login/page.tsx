@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getStaffSession } from "@/lib/auth/session";
 import { StaffLoginForm } from "@/components/auth/StaffLoginForm";
 import { Card } from "@/components/ui/Card";
 import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = { title: "ورود ادمین" };
 
-export default async function AdminLoginPage() {
-  const session = await getStaffSession();
-  if (session) redirect("/admin");
-
+export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-sm">
