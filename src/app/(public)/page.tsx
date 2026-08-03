@@ -2,6 +2,7 @@ import { Zap, HandCoins, LocateFixed, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { HomeSlider } from "@/components/home/HomeSlider";
 import { HomeServiceFlow } from "@/components/home/HomeServiceFlow";
+import { InstallAppButton } from "@/components/home/InstallAppButton";
 
 export default async function HomePage() {
   const [slides, envelopeTypes, coveredCities] = await Promise.all([
@@ -52,6 +53,8 @@ export default async function HomePage() {
         envelopeTypes={envelopeTypes.map((e) => ({ id: e.id, name: e.name }))}
         intracityCities={intracityCities}
       />
+
+      <InstallAppButton />
 
       <div className="mt-16 grid gap-6 sm:grid-cols-3">
         <FeatureCard
