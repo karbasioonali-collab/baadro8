@@ -40,22 +40,20 @@ export function HomeSlider({ slides }: { slides: Slide[] }) {
           // نمی‌شود — فقط خودِ تصویر تمیز نمایش داده می‌شود. عنوان همچنان
           // به‌عنوان aria-label برای screen reader نگه داشته شده.
           //
-          // backgroundSize عمداً «contain» است، نه «cover»: اسلایدها همیشه
-          // نسبت تصویر یکسان ندارند (مثلاً یکی ۲.۷۶:۱ در برابر ۴:۱ بقیه)،
-          // و «cover» هر تصویری را برای پر کردن کل کادر می‌برد. «contain»
-          // تضمین می‌کند هیچ‌وقت چیزی از تصویر بریده نشود، صرف‌نظر از نسبتش؛
-          // فضای خالی احتمالی (letterbox) با رنگ روشن هم‌خانواده‌ی پس‌زمینه‌ی
-          // خودِ اسلایدها (آبی خیلی روشن) پر می‌شود تا محسوس نباشد.
+          // backgroundSize روی «cover» است — همه‌ی اسلایدهای فعلی دقیقاً
+          // هم‌نسبت‌اند (۱۰۲۴×۲۵۶، ۴:۱). اگر در آینده اسلایدی با نسبت
+          // متفاوت اضافه شد، باید همان راه‌حل «contain» + رنگ پس‌زمینه‌ی
+          // letterbox که قبلاً برای این دقیقاً همین مورد استفاده شده بود
+          // دوباره به کار گرفته شود (تاریخچه‌ی این کامپوننت را ببینید).
           const content = (
             <div
-              className="relative h-44 sm:h-64 w-full shrink-0 bg-brand-blue-50"
+              className="relative h-44 sm:h-64 w-full shrink-0"
               role="img"
               aria-label={slide.title}
               style={{
                 backgroundImage: `url(${slide.imageUrl})`,
-                backgroundSize: "contain",
+                backgroundSize: "cover",
                 backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
               }}
             />
           );
