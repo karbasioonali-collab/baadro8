@@ -172,7 +172,7 @@ Cannot find module '/app/node_modules/playwright-core/browsers.json'
 | نقشه | Leaflet / OpenStreetMap، به‌همراه دکمه‌ی Geolocation مرورگر («موقعیت من») |
 | نمودار | Recharts |
 | آیکون | lucide-react |
-| PWA | `manifest.ts` + service worker دستی (`public/sw.js`) — بدون رفتار مسیر‌محور خاص |
+| PWA | نصب‌پذیر روی اندروید/iOS (`manifest.ts` + آیکون‌ها + متادیتای اپل، از ابتدای پروژه آماده بوده). `service worker` (`public/sw.js`) کش cache-first برای فایل‌های استاتیک دارد: آیکون‌ها، عکس‌های اسلایدر (`/slides/`)، و خروجی بیلد Next.js (`/_next/static/` — شامل CSS/JS/فونت). ناوبری صفحات (از جمله `/results`) همیشه network-first است؛ **هیچ‌وقت** پاسخ قیمت/مقایسه کش نمی‌شود |
 | SMS | لایه انتزاعی `SmsProvider` (`src/lib/sms/`) — پیاده‌سازی‌های موجود: `mock` و `kavenegar` (واقعی، جزئیات در بخش ۲) |
 | میزبانی | **Liara**، بدون Dockerfile (کاملاً auto-detect-محور). محدودیت‌های مهمش در بخش ⚠️ بالا توضیح داده شده |
 
@@ -668,6 +668,28 @@ rm fix.js
 بدون migration — این فقط حذف چند خط منطق frontend بود (هیچ‌جا داده‌ی دیتابیس یا schema درگیر نبود).
 
 **کامیت:** `8b33196`
+
+### ۱۴۰۵/۰۵/۱۵ (۲۰۲۶-۰۸-۰۳) — تبدیل سایت به PWA نصب‌پذیر (اندروید و iOS)
+
+درخواست شد سایت نصب‌پذیر شود، بدون آمار نصب. بررسی کد نشان داد **بیشتر زیرساخت لازم از قبل، از همان ابتدای پروژه (کامیت `4933b14`، قبل از شروع این تعامل) آماده بوده**:
+
+- `src/app/manifest.ts` (فایل‌قرارداد Next.js که خودکار `/manifest.webmanifest` می‌سازد و `<link rel="manifest">` را تزریق می‌کند): نام «بادرو»، آیکون‌های ۱۹۲×۱۹۲/۵۱۲×۵۱۲/۵۱۲×۵۱۲-maskable، `theme_color: "#a8d8f0"`، `display: "standalone"`.
+- `public/icons/` شامل تمام سایزهای لازم به‌علاوه `apple-touch-icon.png` و `icon.svg`.
+- `src/app/layout.tsx`: `metadata.manifest`، `metadata.icons` (شامل `apple-touch-icon`)، `metadata.appleWebApp` (`capable`, `statusBarStyle`, `title` — دقیقاً همان تگ‌های لازم برای نصب‌پذیری سافاری/iOS)، `viewport.themeColor`.
+- `src/components/pwa/ServiceWorkerRegister.tsx`: کامپوننت کلاینتی که `public/sw.js` را فقط در production ثبت می‌کند.
+- `public/sw.js`: Service Worker با استراتژی network-first برای ناوبری صفحات (با fallback به `public/offline.html` وقتی آفلاین) و cache-first برای فایل‌های استاتیک.
+
+**تنها خلأ واقعی که پر شد:** در `public/sw.js`، شرط مسیرهای cache-first فقط `/icons/` و `/_next/static/` را پوشش می‌داد؛ `/slides/` (عکس‌های اسلایدر صفحه اصلی) اضافه شد تا طبق درخواست («عکس‌های اسلایدر» صراحتاً ذکر شده بود) هم کش شوند. کامنت‌های توضیحی هم اضافه شد که تأیید می‌کند مسیرهای قیمت‌گذاری/نتایج (`/results` و مشابه) **هرگز** کش نمی‌شوند — چون این‌ها یا از طریق ناوبری صفحه (شاخه‌ی network-first جدا) یا از طریق Server Action با متد POST (که همان ابتدای فایل با `if (request.method !== "GET") return;` کلاً از کش‌شدن مستثنی است) انجام می‌شوند، نه GET به مسیرهای استاتیک.
+
+هیچ فایل دیگری تغییر نکرد — طبق دستور صریح، هیچ صفحه/فرم/منطق قیمت‌گذاری/پنل ادمین یا شرکتی دست نخورد.
+
+با تست محلی تایید شد: منطق تطبیق مسیر در `public/sw.js` با ۱۰ سناریوی تست (`node -e`) — آیکون‌ها/اسلایدها/`_next/static` باید کش شوند، صفحات نتایج/پنل ادمین/پنل شرکت هرگز نباید کش شوند — همه ✅؛ `node --check public/sw.js` (سینتکس معتبر) ✅؛ `npx tsc --noEmit` و `npx eslint public/sw.js` تمیز ✅؛ `git status` تایید کرد فقط همین یک فایل (به‌علاوه‌ی همین `infobaadro.md`) تغییر کرده.
+
+**⚠️ محدودیت این محیط:** تست نصب واقعی روی گوشی اندروید (کروم) و آیفون (سافاری) از این محیط sandbox ممکن نیست (بدون دستگاه/مرورگر واقعی). معیارهای فنی نصب‌پذیری هر دو پلتفرم (manifest معتبر با آیکون‌های لازم، HTTPS، service worker ثبت‌شده، تگ‌های اپل) برقرارند، ولی تأیید نهایی («Add to Home Screen» واقعی) باید توسط کاربر روی دستگاه واقعی بعد از دیپلوی انجام شود.
+
+بدون migration.
+
+**کامیت:** `TBD`
 
 ---
 

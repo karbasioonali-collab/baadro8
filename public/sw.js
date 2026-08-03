@@ -37,9 +37,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // فایل‌های استاتیک: cache-first
+  // فایل‌های استاتیک (آیکون‌ها، عکس‌های اسلایدر، و خروجی بیلد Next.js شامل
+  // CSS/JS/فونت‌های self-host‌شده‌ی @fontsource که همه زیر _next/static/
+  // با هش نسخه قرار می‌گیرند): cache-first برای لود سریع‌تر.
+  //
+  // ⚠️ عمداً هیچ مسیر دیگری اینجا cache نمی‌شود — یعنی صفحه‌ی نتایج مقایسه
+  // قیمت (/results)، پیش‌نمایش قیمت تقریبی، و ثبت سفارش (که همه از طریق
+  // ناوبری صفحه یا Server Action با روش POST انجام می‌شوند، نه GET به این
+  // مسیرهای استاتیک) هرگز از کش سرو نمی‌شوند و همیشه مستقیم به شبکه/سرور
+  // می‌روند — تا قیمت نمایش‌داده‌شده همیشه واقعی و به‌روز بماند.
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/icons/") || url.pathname.startsWith("/_next/static/")) {
+  if (
+    url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/slides/") ||
+    url.pathname.startsWith("/_next/static/")
+  ) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
