@@ -113,6 +113,24 @@ async function tapinListRequest<T>(
     });
 
     const rawText = await res.text();
+
+    // این لاگ عمداً همیشه (نه فقط موقع شکست) چاپ می‌شود — دقیقاً به همان
+    // دلیلی که لاگ خام check-price (پایین همین فایل) دائمی نگه داشته شده:
+    // تا الان state/tree و city/list هیچ لاگ خامی نداشتند، فقط نتیجه‌ی
+    // پردازش‌شده (extractRawList/extractTotalCount) در city-map.ts لاگ
+    // می‌شد — یعنی اگر تاپین یک HTTP 200 با بدنه‌ای در شکل غیرمنتظره (یا
+    // یک خطای احراز هویت/دسترسی که هنوز throw نشده) برمی‌گرداند، هیچ‌جا
+    // دیده نمی‌شد. buildMarker هم صرفاً برای تایید این است که همین نسخه‌ی
+    // کد (با pagination) واقعاً روی production در حال اجراست — بعد از
+    // تایید توسط لاگ واقعی، می‌شود حذفش کرد.
+    console.error("[Tapin] state/city — بدنه‌ی خام کامل پاسخ", {
+      buildMarker: "tapin-pagination-v1",
+      path,
+      sentBody: body,
+      httpStatus: res.status,
+      rawResponseBody: rawText,
+    });
+
     if (!res.ok) {
       throw new TapinApiError(`تاپین HTTP ${res.status}: ${rawText.slice(0, 500)}`);
     }
