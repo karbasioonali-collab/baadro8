@@ -741,7 +741,7 @@ rm fix.js
 
 بدون migration — `pricingSourceType: "external_api"` و ستون‌های `apiBaseUrl`/`apiKey` از قبل در `Company` وجود داشتند (همان‌هایی که برای چاپار استفاده می‌شوند)؛ ادمین فقط باید یک شرکت جدید با این نوع بسازد و `آدرس API` را `https://api.tapin.ir/api/v2/public/` و `کلید API` را به فرمت `shop_id:token` وارد کند.
 
-**کامیت:** `TBD`
+**کامیت:** `2a7675d`
 
 ---
 
