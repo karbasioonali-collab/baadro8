@@ -1,10 +1,17 @@
 const REQUEST_TIMEOUT_MS = 10000;
 
-// فرض: تعداد استان‌ها (۳۱) و تعداد شهرهای هر استان همیشه کمتر از این
-// مقدار است، پس با یک صفحه (page=1) کل لیست گرفته می‌شود. اگر تاپین واقعاً
-// pagination واقعی اعمال کند و شهرهای یک استان بیشتر از این عدد باشد،
-// باید حلقه‌ی صفحه‌بندی (page=2, 3, ...) اضافه شود.
+// حداکثر تعداد آیتمی که در هر صفحه درخواست می‌شود. طبق تایید مستندات
+// رسمی تاپین، سرور صرف‌نظر از این مقدار ممکن است per-page کوچک‌تری
+// برگرداند و `total_count` واقعی را در پاسخ اعلام کند — به همین دلیل کد
+// پایین‌تر (fetchTapinPaginatedList) دیگر به کافی‌بودن یک صفحه اعتماد
+// نمی‌کند و صفحات بعدی را تا رسیدن به `total_count` می‌گیرد.
 const LIST_PAGE_SIZE = 500;
+
+// سقف امن تعداد صفحات — تا اگر `total_count` به هر دلیلی (پاسخ نامعتبر،
+// عدد غیرمنتظره بزرگ) قابل‌اعتماد نبود، حلقه‌ی صفحه‌بندی هیچ‌وقت بی‌نهایت
+// نشود. ۲۰ صفحه × ۵۰۰ آیتم = تا ۱۰٬۰۰۰ آیتم، خیلی بیشتر از تعداد واقعی
+// استان‌ها (۳۱) یا شهرهای یک استان.
+const MAX_LIST_PAGES = 20;
 
 export type TapinCredentials = {
   baseUrl: string;
@@ -67,6 +74,24 @@ function mapRawItems(list: RawTapinItem[]): { code: string; name: string }[] {
 }
 
 /**
+ * `total_count` را از پاسخ استخراج می‌کند (طبق مستندات رسمی تاپین، هر دو
+ * endpoint این فیلد را برمی‌گردانند). چون شکل دقیق بسته‌بندی پاسخ
+ * (سطح بالا یا داخل `data`) مثل بقیه‌ی این فایل تایید‌نشده، با همان
+ * fallbackهای extractRawList نوشته شده.
+ */
+function extractTotalCount(data: unknown): number | null {
+  if (!data || typeof data !== "object") return null;
+  const obj = data as { total_count?: unknown; data?: { total_count?: unknown } };
+  const raw = obj.total_count ?? obj.data?.total_count;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string" && raw.trim() !== "") {
+    const n = Number(raw);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+/**
  * کلاینت مشترک state/tree و city/list — هر دو JSON ساده با
  * Content-Type: application/json هستند (بر خلاف check-price که چون بادنه
  * نیاز به هدر Authorization دارد و مسیر/شکل درخواستش کاملاً متفاوت است،
@@ -109,30 +134,56 @@ async function tapinListRequest<T>(
   }
 }
 
+/**
+ * تمام صفحات یک لیست صفحه‌بندی‌شده‌ی تاپین (state/tree یا city/list) را
+ * جمع می‌کند. بعد از هر صفحه، `total_count` پاسخ چک می‌شود: اگر تعداد
+ * آیتم‌های جمع‌شده هنوز کمتر از آن بود، صفحه‌ی بعدی هم گرفته می‌شود — تا
+ * سقف MAX_LIST_PAGES. اگر `total_count` در پاسخ نبود، یا یک صفحه هیچ
+ * آیتم جدیدی نداد (یعنی سرور واقعاً تمام شده)، حلقه همان‌جا متوقف می‌شود؛
+ * در هر دو حالت آنچه تا آن لحظه جمع شده برگردانده می‌شود (نه throw) —
+ * منطق کش «فقط غیرخالی» در city-map.ts بدون تغییر باقی مانده و همین‌طور
+ * روی خروجی این تابع اعمال می‌شود.
+ */
+async function fetchTapinPaginatedList(
+  creds: TapinCredentials,
+  path: string,
+  extraBody: Record<string, unknown>
+): Promise<RawTapinItem[]> {
+  const items: RawTapinItem[] = [];
+  for (let page = 1; page <= MAX_LIST_PAGES; page++) {
+    const data = await tapinListRequest<unknown>(creds, path, {
+      count: LIST_PAGE_SIZE,
+      page,
+      ...extraBody,
+    });
+
+    const pageItems = extractRawList(data);
+    if (pageItems.length === 0) break;
+    items.push(...pageItems);
+
+    const totalCount = extractTotalCount(data);
+    if (totalCount == null || items.length >= totalCount) break;
+  }
+  return items;
+}
+
 export type TapinState = { code: string; name: string };
 
-/** لیست استان‌ها، برای ساخت نگاشت نام استان بادرو → کد استان تاپین. */
+/** لیست کامل استان‌ها (همه‌ی صفحات)، برای ساخت نگاشت نام استان بادرو → کد استان تاپین. */
 export async function getTapinStates(creds: TapinCredentials): Promise<TapinState[]> {
-  const data = await tapinListRequest<unknown>(creds, "state/tree/", {
-    count: LIST_PAGE_SIZE,
-    page: 1,
-  });
-  return mapRawItems(extractRawList(data));
+  const items = await fetchTapinPaginatedList(creds, "state/tree/", {});
+  return mapRawItems(items);
 }
 
 export type TapinCity = { code: string; name: string };
 
-/** لیست شهرهای یک استان (بر اساس کد استان تاپین). */
+/** لیست کامل شهرهای یک استان (همه‌ی صفحات، بر اساس کد استان تاپین). */
 export async function getTapinCities(
   creds: TapinCredentials,
   stateCode: string
 ): Promise<TapinCity[]> {
-  const data = await tapinListRequest<unknown>(creds, "city/list/", {
-    count: LIST_PAGE_SIZE,
-    page: 1,
-    state_code: stateCode,
-  });
-  return mapRawItems(extractRawList(data));
+  const items = await fetchTapinPaginatedList(creds, "city/list/", { state_code: stateCode });
+  return mapRawItems(items);
 }
 
 export type TapinQuoteResult = { totalPrice: number };
