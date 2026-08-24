@@ -96,12 +96,27 @@ export async function resolveTapinCityCode(
     const { raw, map } = await getCachedCityMap(creds, state.code);
     const cityCode = map.get(normalize(cityName));
     if (!cityCode) {
+      // فیلدهای زیر عمداً اضافه شدند (فقط لاگ، بدون تغییر منطق match که
+      // همچنان دقیقاً روی normalize(cityName) === normalize(c.name) است):
+      // rawCitiesFromTapinCount برای دیدن سریع «چند شهر اصلاً برگشته» بدون
+      // شمردن دستی آرایه، و possibleSimilarMatches برای دیدن این‌که آیا
+      // یک شهر با نام مشابه (نه دقیقاً یکسان — مثلاً با پیشوند/پسوند
+      // متفاوت) در لیست هست، حتی وقتی تطبیق دقیق شکست خورده.
+      const normalizedSearched = normalize(cityName);
+      const possibleSimilarMatches = raw
+        .filter((c) => {
+          const n = normalize(c.name);
+          return n.includes(normalizedSearched) || normalizedSearched.includes(n);
+        })
+        .map((c) => c.name);
       console.error("[Tapin] شهر بادرو در لیست city/list تاپین (برای همین استان) پیدا نشد", {
         province: provinceName,
         searchedCity: cityName,
-        normalizedSearched: normalize(cityName),
+        normalizedSearched,
         tapinStateCode: state.code,
+        rawCitiesFromTapinCount: raw.length,
         rawCitiesFromTapin: raw.map((c) => c.name),
+        possibleSimilarMatches,
       });
       return null;
     }
