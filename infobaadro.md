@@ -877,7 +877,7 @@ async function getCachedStates(creds: TapinCredentials) {
 
 بدون migration.
 
-**کامیت:** `TBD`
+**کامیت:** `e03f7b5`
 
 ---
 
