@@ -93,9 +93,10 @@ function extractTotalCount(data: unknown): number | null {
 
 /**
  * کلاینت مشترک state/tree و city/list — هر دو JSON ساده با
- * Content-Type: application/json هستند (بر خلاف check-price که چون بادنه
- * نیاز به هدر Authorization دارد و مسیر/شکل درخواستش کاملاً متفاوت است،
- * جدا پیاده‌سازی شده).
+ * Content-Type و هدر Authorization: Bearer <token> هستند (تایید‌شده با
+ * تست production — بدون این هدر، خطای «توکن موردنظر یافت نشد»/۳۳۲
+ * برمی‌گشت). check-price همچنان جدا پیاده‌سازی شده چون بدنه‌اش کاملاً
+ * شکل متفاوتی دارد (فیلدهای order/products به‌جای count/page/state_code).
  */
 async function tapinListRequest<T>(
   creds: TapinCredentials,
@@ -107,7 +108,16 @@ async function tapinListRequest<T>(
   try {
     const res = await fetch(`${creds.baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // ⚠️ تایید شد (لاگ production + تست curl مستقیم کاربر): برخلاف
+        // مشخصات اولیه‌ای که این endpointها بر اساسش نوشته شده بودند،
+        // state/tree و city/list هم — دقیقاً مثل check-price — به هدر
+        // Authorization با فقط بخش token (نه shop_id:token کامل) نیاز
+        // دارند؛ بدون آن، تاپین خطای «توکن موردنظر یافت نشد» (status 332)
+        // برمی‌گرداند.
+        Authorization: `Bearer ${creds.token}`,
+      },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
@@ -121,17 +131,16 @@ async function tapinListRequest<T>(
     // می‌شد — یعنی اگر تاپین یک HTTP 200 با بدنه‌ای در شکل غیرمنتظره (یا
     // یک خطای احراز هویت/دسترسی که هنوز throw نشده) برمی‌گرداند، هیچ‌جا
     // دیده نمی‌شد. buildMarker هم صرفاً برای تایید این است که همین نسخه‌ی
-    // کد (با pagination) واقعاً روی production در حال اجراست — بعد از
-    // تایید توسط لاگ واقعی، می‌شود حذفش کرد.
+    // کد (با pagination + Authorization) واقعاً روی production در حال
+    // اجراست — بعد از تایید توسط لاگ واقعی، می‌شود حذفش کرد.
     console.error("[Tapin] state/city — بدنه‌ی خام کامل پاسخ", {
-      buildMarker: "tapin-pagination-v1",
+      buildMarker: "tapin-pagination-v1-with-auth",
       path,
       sentBody: body,
-      // state/tree و city/list فعلاً هیچ هدر Authorization ارسال نمی‌کنند
-      // (فقط Content-Type) — طبق مشخصات اولیه‌ای که این endpointها بر
-      // اساسش نوشته شدند. این فیلد صرفاً برای تایید همین واقعیت در لاگ
-      // production است (نه چیزی که این تابع واقعاً بفرستد).
-      authorizationHeaderSent: "هیچ — state/tree و city/list فعلاً بدون Authorization ارسال می‌شوند",
+      // فقط ۴ کاراکتر آخر توکن ارسالی (نه کل رشته) — برای تایید این‌که
+      // همان توکن ذخیره‌شده در Company.apiKey واقعاً فرستاده می‌شود.
+      authorizationHeaderTokenSuffix:
+        creds.token.length > 4 ? `...${creds.token.slice(-4)}` : "(توکن خیلی کوتاه است)",
       httpStatus: res.status,
       rawResponseBody: rawText,
     });

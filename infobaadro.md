@@ -799,6 +799,22 @@ rm fix.js
 
 **کامیت:** `6567551`
 
+### ۱۴۰۵/۰۵/۱۶ (۲۰۲۶-۰۸-۰۴) — رفع نهایی مشکل تاپین: افزودن هدر Authorization به state/tree و city/list
+
+طبق تایید کاربر (تست curl مستقیم که نشون داد بدون هدر Authorization دقیقاً همون خطای ۳۳۲/«توکن موردنظر یافت نشد» برمی‌گرده، و با هدر موفق می‌شه)، فرضیه‌ی ردیف قبلی همین تاریخچه تایید و اجرا شد:
+
+**تغییر (فقط در `src/lib/tapin/client.ts`):** در `tapinListRequest` (تابع مشترک `state/tree` و `city/list`)، هدر `Authorization: Bearer <token>` اضافه شد — دقیقاً مثل `check-price`، فقط بخش `token` (بعد از `:` در `Company.apiKey`)، نه `shop_id:token` کامل. کامنت بالای این تابع هم به‌روز شد تا این رفتار جدید (تایید‌شده با production) را منعکس کند. لاگ خام `state/tree`/`city/list` هم به‌روز شد: فیلد قبلی `authorizationHeaderSent` (که می‌گفت هیچ هدری فرستاده نمی‌شود) با `authorizationHeaderTokenSuffix` جایگزین شد — دقیقاً همان الگوی لاگ `check-price`، فقط ۴ کاراکتر آخر توکن (نه کل رشته). `buildMarker` هم به `tapin-pagination-v1-with-auth` تغییر کرد تا در production بشود مطمئن شد این نسخه‌ی جدید (با Authorization) واقعاً دیپلوی شده.
+
+هیچ فایل دیگری تغییر نکرد — `city-map.ts` (نگاشت/کش شهر)، `external-api-provider.ts` (منطق دسترسی به provider)، و `getTapinQuote`/check-price دست‌نخورده ماندند (check-price از قبل همین هدر را داشت).
+
+با تست محلی (mock کردن `fetch`) با ۱۳ سناریو تایید شد: `state/tree` و `city/list` حالا هر دو `Authorization: Bearer <token>` می‌فرستند (نه `shop_id:token` کامل)، **شبیه‌سازی دقیق سناریوی گزارش‌شده** (بدون هدر → ۳۳۲؛ با هدر → موفق) حالا با هدر جدید موفق می‌شود، pagination (رفع‌شده در ردیف‌های قبلی) هنوز درست کار می‌کند، `check-price` دست‌نخورده مانده، رفتار ایزوله روی خطای شبکه/HTTP هنوز `throw` می‌شود (برای `safeGetQuote`/try-catch بالادستی)، و کل مسیر `resolveTapinCityCode` (نگاشت + کش) هنوز درست کار می‌کند. `npx tsc --noEmit`/`npx eslint` تمیز.
+
+بدون migration — فقط یک هدر HTTP اضافه شد.
+
+**این احتمالاً رفع نهایی مشکل «تاپین در نتایج ظاهر نمی‌شود» است** — منتظر تایید کاربر بعد از دیپلوی و یک تست واقعی روی production.
+
+**کامیت:** `TBD`
+
 ---
 
 *این فایل به‌صورت خودکار توسط دستیار پس از هر تغییر مهم به‌روزرسانی می‌شود.*
