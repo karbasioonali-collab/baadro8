@@ -127,6 +127,11 @@ async function tapinListRequest<T>(
       buildMarker: "tapin-pagination-v1",
       path,
       sentBody: body,
+      // state/tree و city/list فعلاً هیچ هدر Authorization ارسال نمی‌کنند
+      // (فقط Content-Type) — طبق مشخصات اولیه‌ای که این endpointها بر
+      // اساسش نوشته شدند. این فیلد صرفاً برای تایید همین واقعیت در لاگ
+      // production است (نه چیزی که این تابع واقعاً بفرستد).
+      authorizationHeaderSent: "هیچ — state/tree و city/list فعلاً بدون Authorization ارسال می‌شوند",
       httpStatus: res.status,
       rawResponseBody: rawText,
     });
@@ -279,6 +284,12 @@ export async function getTapinQuote(
     // total_price، رصد لاگ‌های production بعد از اولین استفاده‌ی واقعی است.
     console.error("[Tapin] check-price — بدنه‌ی خام کامل پاسخ", {
       sentBody: { ...body, shop_id: "***REDACTED***" },
+      // فقط ۴ کاراکتر آخر توکنی که واقعاً در هدر Authorization فرستاده شده
+      // (نه کل رشته) — برای تایید این‌که همان توکن ذخیره‌شده در
+      // Company.apiKey (بعد از parseTapinCredentials) واقعاً همینه که
+      // فرستاده می‌شود، بدون افشای کامل توکن در لاگ.
+      authorizationHeaderTokenSuffix:
+        creds.token.length > 4 ? `...${creds.token.slice(-4)}` : "(توکن خیلی کوتاه است)",
       httpStatus: res.status,
       rawResponseBody: rawText,
     });
