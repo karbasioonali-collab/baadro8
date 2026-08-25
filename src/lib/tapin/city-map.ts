@@ -18,6 +18,24 @@ const cityCache = new Map<
   { raw: TapinCity[]; map: Map<string, string>; expiresAt: number }
 >();
 
+/**
+ * single-flight: وقتی چند فراخوانی هم‌زمان (مثلاً پیش‌نمایش زنده‌ی صفحه
+ * اصلی + صفحه‌ی /results که تقریباً پشت‌سرهم اجرا می‌شوند) با همان
+ * credsKey به کش سر می‌زنند و کش هنوز خالی/منقضی است، همه باید منتظر
+ * *همون یک* درخواست در حال اجرا بمانند — نه این‌که هرکدام مستقل یک
+ * fetch جدا به state/tree/city/list بزنند (که می‌تواند دو نتیجه‌ی
+ * متفاوت از تاپین بگیرد و باعث تناقض شود — مستند در بخش ۴ همین فایل
+ * تاریخچه، ردیف race condition). این Mapها فقط طول عمر همون یک
+ * درخواست در حال پرواز را نگه می‌دارند؛ بعد از تمام‌شدن (موفق یا خطا)
+ * بلافاصله پاک می‌شوند تا فراخوانی بعدی (غیرهم‌زمان) طبق TTL/کش عادی
+ * رفتار کند.
+ */
+const stateFetchInFlight = new Map<string, Promise<{ code: string; name: string }[]>>();
+const cityFetchInFlight = new Map<
+  string,
+  Promise<{ raw: TapinCity[]; map: Map<string, string>; expiresAt: number }>
+>();
+
 /** یکسان‌سازی نام — همان منطق normalize در chapar/city-map.ts. */
 function normalize(name: string): string {
   return name
@@ -39,13 +57,28 @@ async function getCachedStates(creds: TapinCredentials) {
   const cached = stateCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
-  const states = await getTapinStates(creds);
-  // فقط نتیجه‌ی غیرخالی کش می‌شود — همان دلیل مستندشده در chapar/city-map.ts
-  // (تا یک شکست/خطای موقت، نتیجه‌ی خالی را برای ۶ ساعت "قفل" نکند).
-  if (states.length > 0) {
-    stateCache.set(key, { data: states, expiresAt: Date.now() + STATE_CACHE_TTL_MS });
-  }
-  return states;
+  // اگر همین الان یک فراخوانی دیگر (هم‌زمان) در حال گرفتن همین لیست است،
+  // به‌جای یک fetch جدا، منتظر همان نتیجه می‌مانیم.
+  const existing = stateFetchInFlight.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    try {
+      const states = await getTapinStates(creds);
+      // فقط نتیجه‌ی غیرخالی کش می‌شود — همان دلیل مستندشده در chapar/city-map.ts
+      // (تا یک شکست/خطای موقت، نتیجه‌ی خالی را برای ۶ ساعت "قفل" نکند).
+      if (states.length > 0) {
+        stateCache.set(key, { data: states, expiresAt: Date.now() + STATE_CACHE_TTL_MS });
+      }
+      return states;
+    } finally {
+      // چه موفق چه ناموفق، بعد از تمام‌شدن این درخواست، ورودی in-flight
+      // پاک می‌شود تا فراخوانی بعدی (غیرهم‌زمان) دوباره طبق TTL/کش رفتار کند.
+      stateFetchInFlight.delete(key);
+    }
+  })();
+  stateFetchInFlight.set(key, promise);
+  return promise;
 }
 
 async function getCachedCityMap(creds: TapinCredentials, stateCode: string) {
@@ -53,14 +86,25 @@ async function getCachedCityMap(creds: TapinCredentials, stateCode: string) {
   const cached = cityCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached;
 
-  const cities = await getTapinCities(creds, stateCode);
-  const map = new Map<string, string>();
-  for (const c of cities) map.set(normalize(c.name), c.code);
-  const entry = { raw: cities, map, expiresAt: Date.now() + CITY_CACHE_TTL_MS };
-  if (cities.length > 0) {
-    cityCache.set(key, entry);
-  }
-  return entry;
+  const existing = cityFetchInFlight.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    try {
+      const cities = await getTapinCities(creds, stateCode);
+      const map = new Map<string, string>();
+      for (const c of cities) map.set(normalize(c.name), c.code);
+      const entry = { raw: cities, map, expiresAt: Date.now() + CITY_CACHE_TTL_MS };
+      if (cities.length > 0) {
+        cityCache.set(key, entry);
+      }
+      return entry;
+    } finally {
+      cityFetchInFlight.delete(key);
+    }
+  })();
+  cityFetchInFlight.set(key, promise);
+  return promise;
 }
 
 /**
