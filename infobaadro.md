@@ -958,7 +958,7 @@ curl -X POST 'https://api.tapin.ir/api/v2/public/state/tree/' \
 
 بدون migration — فقط تغییر مقدار ثابت در کد.
 
-**کامیت:** `TBD`
+**کامیت:** `ebb252a`
 
 ---
 
