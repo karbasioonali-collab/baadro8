@@ -943,7 +943,7 @@ curl -X POST 'https://api.tapin.ir/api/v2/public/state/tree/' \
 
 بدون migration — طبق دستور صریح، هیچ ستون/مدل/enum جدیدی به schema اضافه نشد؛ ادمین باید یک شرکت جدید با همین companyId ثابت (`cmtepeku600000lo8ee5yybv9`)، `type: intercity`، و `pricingSourceType: internal_formula` بسازد (اگر هنوز نساخته).
 
-**کامیت:** `TBD`
+**کامیت:** `e12e16d`
 
 ---
 
