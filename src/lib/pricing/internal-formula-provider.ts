@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { computeRouteDistanceKm } from "./distance";
+import { DTS_COMPANY_ID } from "./dts-data";
+import { DtsZoneFormulaProvider } from "./dts-provider";
 import type {
   DistanceFactor,
   FormulaParams,
@@ -38,9 +40,23 @@ function estimateDeliveryDays(
 /**
  * روش pricing_source_type = internal_formula
  * اولویت اول MVP — فرمول ریاضی ساده یا جدول پله‌ای که از پنل ادمین برای هر شرکت تعریف می‌شود.
+ *
+ * ⚠️ استثنا: شرکت DTS (companyId ثابت، DTS_COMPANY_ID) هم از همین
+ * pricingSourceType=internal_formula استفاده می‌کند (چون افزودن یک مقدار
+ * enum جدید فقط برای همین یک شرکت نیاز به migration داشت)، ولی منطق
+ * قیمتش کاملاً متفاوت است — یک فرمول زون‌محور با داده‌ی ثابت در کد
+ * (dts-data.ts/dts-provider.ts)، نه جدول PricingRule در دیتابیس. تشخیص با
+ * companyId است، دقیقاً همان الگویی که ExternalApiProvider با hostname
+ * (isChaparBaseUrl/isTapinBaseUrl) برای تشخیص provider واقعی استفاده می‌کند.
  */
 export class InternalFormulaProvider implements PriceProvider {
+  private dtsProvider = new DtsZoneFormulaProvider();
+
   async getQuote(input: PriceQuoteInput): Promise<PriceQuoteResult> {
+    if (input.companyId === DTS_COMPANY_ID) {
+      return this.dtsProvider.getQuote(input);
+    }
+
     const rule = await prisma.pricingRule.findFirst({
       where: {
         companyId: input.companyId,
