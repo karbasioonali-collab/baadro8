@@ -107,22 +107,6 @@ export function computePostPishtazQuote(input: {
   const surcharge = Math.round(zonePrice * surchargeRate);
   const price = zonePrice + surcharge;
 
-  // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت قیمت صفر گزارش‌شده، این
-  // console.log حذف شود. نشون می‌ده دقیقاً چه مقداری از جدول خونده شده
-  // (zonePrice — که از قبل ×۱۰۰ در post-pishtaz-data.ts اعمال شده، نه یک
-  // ضرب runtime جدا) و بعد از افزودن surcharge احتمالی چی شده.
-  console.log("[پست پیشتاز] computePostPishtazQuote", {
-    originCity: input.originCity,
-    destinationCity: input.destinationCity,
-    weightGrams: input.weightGrams,
-    halfSteps,
-    zone,
-    zonePriceFromTable: zonePrice,
-    surchargeRate,
-    surcharge,
-    finalPrice: price,
-  });
-
   return {
     available: true,
     price,

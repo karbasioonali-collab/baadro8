@@ -4,7 +4,7 @@ import { computePostPishtazQuote } from "./post-pishtaz-provider";
 import { POST_PISHTAZ_COMPANY_ID, findPostPishtazZoneForCity } from "./post-pishtaz-data";
 
 test("POST_PISHTAZ_COMPANY_ID مطابق شناسه‌ی داده‌شده است", () => {
-  assert.equal(POST_PISHTAZ_COMPANY_ID, "cmtq4bieq00000ml3fvmtuv3");
+  assert.equal(POST_PISHTAZ_COMPANY_ID, "cmtq4bieq00000jml3fvmtuv3");
 });
 
 test("زون‌یابی شهرها + یکسان‌سازی نام (فاصله/ي-ی عربی/پیشوند)", () => {

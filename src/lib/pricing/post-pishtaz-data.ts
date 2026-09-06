@@ -16,7 +16,7 @@
  */
 
 /** شناسه‌ی ثابت شرکت «پست پیشتاز» در دیتابیس بادرو — این provider فقط برای همین یک companyId فعال می‌شود. */
-export const POST_PISHTAZ_COMPANY_ID = "cmtq4bieq00000ml3fvmtuv3";
+export const POST_PISHTAZ_COMPANY_ID = "cmtq4bieq00000jml3fvmtuv3";
 
 /**
  * زون‌بندی شهرها. زون ۱ فقط تهران است (شهر ویژه — مسیر تهران↔تهران با
