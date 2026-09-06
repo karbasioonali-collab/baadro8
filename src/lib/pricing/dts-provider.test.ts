@@ -28,7 +28,7 @@ test("(الف) تهران→تبریز، ۳کیلوگرم: قیمت زون تب�
   });
   assert.equal(r.available, true);
   if (r.available) {
-    assert.equal(r.price, 365000); // ردیف ۳.۰kg، ستون Zone2
+    assert.equal(r.price, 292000); // ردیف ۳.۰kg، ستون Zone2
     assert.equal(r.breakdown["افزایش_مبدا_غیرتهران_۲۰_درصد"], undefined);
   }
 
@@ -52,10 +52,10 @@ test("(ب) تبریز→اصفهان (هردو غیرتهران)، ۵کیلوگ�
   });
   assert.equal(r.available, true);
   if (r.available) {
-    // ردیف ۵.۰kg، ستون Zone2 = ۴۵۱٬۰۰۰؛ ۲۰٪ = ۹۰٬۲۰۰؛ جمع = ۵۴۱٬۲۰۰
-    assert.equal(r.breakdown["قیمت_پایه_زون"], 451000);
-    assert.equal(r.breakdown["افزایش_مبدا_غیرتهران_۲۰_درصد"], 90200);
-    assert.equal(r.price, 541200);
+    // ردیف ۵.۰kg، ستون Zone2 = ۳۶۰٬۸۰۰؛ ۲۰٪ = ۷۲٬۱۶۰؛ جمع = ۴۳۲٬۹۶۰
+    assert.equal(r.breakdown["قیمت_پایه_زون"], 360800);
+    assert.equal(r.breakdown["افزایش_مبدا_غیرتهران_۲۰_درصد"], 72160);
+    assert.equal(r.price, 432960);
   }
 
   // قانون ۴ صریحاً می‌گوید زون *مبدا*، نه مقصد — با دو شهر در زون‌های متفاوت این تفاوت را تایید می‌کنیم
@@ -74,15 +74,15 @@ test("(ب) تبریز→اصفهان (هردو غیرتهران)، ۵کیلوگ�
   assert.equal(originZone2.available, true);
   assert.equal(originZone3.available, true);
   if (originZone2.available && originZone3.available) {
-    assert.equal(originZone2.price, 541200); // زون مبدا = ۲ (همان قبلی)
-    assert.equal(originZone3.price, 657600); // زون مبدا = ۳ → (۵۴۸٬۰۰۰ + ۲۰٪ = ۶۵۷٬۶۰۰)
+    assert.equal(originZone2.price, 432960); // زون مبدا = ۲ (همان قبلی)
+    assert.equal(originZone3.price, 526080); // زون مبدا = ۳ → (۴۳۸٬۴۰۰ + ۲۰٪ = ۵۲۶٬۰۸۰)
     assert.notEqual(originZone2.price, originZone3.price, "باید فقط زون مبدا اثر بگذارد، نه مقصد");
   }
 });
 
 // سناریوی (ج): وزن ۲۵ کیلوگرم — بالای ۲۰ کیلوگرم
 test("(ج) وزن ۲۵ کیلوگرم (بالای ۲۰): ردیف ۲۰kg + نیم‌کیلوهای اضافه", () => {
-  // تهران↔تهران (Zone1): ردیف ۲۰kg=۶۰۷٬۰۰۰، ۱۰ نیم‌کیلوی اضافه × ۱۳٬۰۰۰ = ۱۳۰٬۰۰۰ → جمع ۷۳۷٬۰۰۰
+  // تهران↔تهران (Zone1): ردیف ۲۰kg=۴۸۵٬۶۰۰، ۱۰ نیم‌کیلوی اضافه × ۱۰٬۴۰۰ = ۱۰۴٬۰۰۰ → جمع ۵۸۹٬۶۰۰
   const zone1 = computeDtsQuote({
     originCity: "تهران",
     destinationCity: "تهران",
@@ -90,9 +90,9 @@ test("(ج) وزن ۲۵ کیلوگرم (بالای ۲۰): ردیف ۲۰kg + نی�
     weightGrams: 25000,
   });
   assert.equal(zone1.available, true);
-  if (zone1.available) assert.equal(zone1.price, 737000);
+  if (zone1.available) assert.equal(zone1.price, 589600);
 
-  // تبریز→اصفهان (Zone2 + ۲۰٪): ردیف ۲۰kg=۹۹۷٬۰۰۰ + ۱۰×۱۸٬۰۰۰=۱۸۰٬۰۰۰ → ۱٬۱۷۷٬۰۰۰؛ +۲۰٪=۲۳۵٬۴۰۰ → ۱٬۴۱۲٬۴۰۰
+  // تبریز→اصفهان (Zone2 + ۲۰٪): ردیف ۲۰kg=۷۹۷٬۶۰۰ + ۱۰×۱۴٬۴۰۰=۱۴۴٬۰۰۰ → ۹۴۱٬۶۰۰؛ +۲۰٪=۱۸۸٬۳۲۰ → ۱٬۱۲۹٬۹۲۰
   const zone2 = computeDtsQuote({
     originCity: "تبریز",
     destinationCity: "اصفهان",
@@ -100,7 +100,7 @@ test("(ج) وزن ۲۵ کیلوگرم (بالای ۲۰): ردیف ۲۰kg + نی�
     weightGrams: 25000,
   });
   assert.equal(zone2.available, true);
-  if (zone2.available) assert.equal(zone2.price, 1412400);
+  if (zone2.available) assert.equal(zone2.price, 1129920);
 });
 
 // سناریوی (د): شهری که در هیچ زونی نیست — باید غایب شود، نه خطا بدهد
@@ -141,7 +141,7 @@ test("گرد کردن وزن به بالاترین پله‌ی نیم‌کیلو
     weightGrams: 1200,
   });
   assert.equal(r.available, true);
-  if (r.available) assert.equal(r.price, 175000);
+  if (r.available) assert.equal(r.price, 140000);
 
   // درست روی مرز ۳.۰kg نباید به پله‌ی بعدی گرد شود
   const exact = computeDtsQuote({
@@ -151,7 +151,7 @@ test("گرد کردن وزن به بالاترین پله‌ی نیم‌کیلو
     weightGrams: 3000,
   });
   assert.equal(exact.available, true);
-  if (exact.available) assert.equal(exact.price, 214000);
+  if (exact.available) assert.equal(exact.price, 171200);
 });
 
 test("وزن کمتر از حداقل ردیف جدول (۱kg) با نرخ همان حداقل محاسبه می‌شود", () => {
@@ -162,7 +162,7 @@ test("وزن کمتر از حداقل ردیف جدول (۱kg) با نرخ هم�
     weightGrams: 100,
   });
   assert.equal(r.available, true);
-  if (r.available) assert.equal(r.price, 164000);
+  if (r.available) assert.equal(r.price, 131200);
 });
 
 test("وزن نامعتبر/ناقص (پیش‌نمایش زنده) → available:false، بدون crash", () => {
@@ -189,7 +189,7 @@ test("پاکت (envelope) با وزن ثابت ۵۰۰ گرم روی حداقل �
     parcelType: "envelope",
   });
   assert.equal(r.available, true);
-  if (r.available) assert.equal(r.price, 164000);
+  if (r.available) assert.equal(r.price, 131200);
 });
 
 test("وزن بالای ۱۰۰ کیلوگرم (خارج از محدوده‌ی پشتیبانی‌شده) → available:false", () => {
@@ -209,5 +209,5 @@ test("وزن بالای ۱۰۰ کیلوگرم (خارج از محدوده‌ی �
     weightGrams: 100000,
   });
   assert.equal(exactly100kg.available, true);
-  if (exactly100kg.available) assert.equal(exactly100kg.price, 2687000); // ۶۰۷٬۰۰۰ + ۱۶۰×۱۳٬۰۰۰
+  if (exactly100kg.available) assert.equal(exactly100kg.price, 2149600); // ۴۸۵٬۶۰۰ + ۱۶۰×۱۰٬۴۰۰
 });
