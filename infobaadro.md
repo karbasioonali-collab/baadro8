@@ -1008,7 +1008,7 @@ DTS یک جدول قیمت جدید‌تر فرستاد — قیمت‌ها حد
 
 بدون migration — طبق دستور صریح، هیچ ستون/مدل/enum جدیدی به schema اضافه نشد؛ ادمین باید یک شرکت جدید با همین companyId ثابت، `type: intercity`، و `pricingSourceType: internal_formula` بسازد.
 
-**کامیت:** `TBD`
+**کامیت:** `3a442cd`
 
 ---
 
