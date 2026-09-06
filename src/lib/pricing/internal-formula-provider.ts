@@ -59,6 +59,20 @@ export class InternalFormulaProvider implements PriceProvider {
   private postPishtazProvider = new PostPishtazZoneFormulaProvider();
 
   async getQuote(input: PriceQuoteInput): Promise<PriceQuoteResult> {
+    // TODO(لاگ موقت تشخیصی): بعد از پیدا شدن علت قیمت صفر گزارش‌شده برای
+    // پست پیشتاز، این console.log حذف شود. نشون می‌ده companyId واقعی
+    // چیه و دقیقاً کدام شاخه (DTS/پست پیشتاز/عمومی PricingRule) اجرا شد —
+    // تا مطمئن بشیم companyId ذخیره‌شده در دیتابیس برای «پست پیشتاز»
+    // واقعاً همون POST_PISHTAZ_COMPANY_ID است، نه یک مقدار متفاوت که به
+    // اشتباه به شاخه‌ی عمومی می‌افتد.
+    console.log("[InternalFormulaProvider] دیسپچ بر اساس companyId", {
+      companyId: input.companyId,
+      isDts: input.companyId === DTS_COMPANY_ID,
+      isPostPishtaz: input.companyId === POST_PISHTAZ_COMPANY_ID,
+      dtsCompanyId: DTS_COMPANY_ID,
+      postPishtazCompanyId: POST_PISHTAZ_COMPANY_ID,
+    });
+
     if (input.companyId === DTS_COMPANY_ID) {
       return this.dtsProvider.getQuote(input);
     }
