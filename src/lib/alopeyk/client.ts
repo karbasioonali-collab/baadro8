@@ -216,10 +216,13 @@ export type AlopeykQuoteResult = { totalPrice: number };
  * - `weight` گرم، `worth` تومان — بدون نیاز به تبدیل واحد (تایید‌شده،
  *   برخلاف چاپار/تاپین که این تبدیل حدسی/کشف‌شده بود).
  *
- * ⚠️ قیمت نهایی: اولویت با `order[0].total_price` (قیمت کل سفارش) است؛
- * اگر نبود fallback به `items[0].price` (قیمت فقط همان آیتم). کدام‌یک
- * واقعاً کامل/درست است (مثلاً آیا total_price شامل هزینه‌ی بسته‌بندی هم
- * می‌شود) هنوز با پاسخ واقعی production تایید نشده.
+ * ⚠️ شکل واقعی `data` با مستندات فرق دارد و **تایید‌شده با یک پاسخ واقعی
+ * production** است: برخلاف مستندات (که `data` را یک آرایه با یک عضو
+ * `{items, order}` نشان می‌داد)، پاسخ واقعی `data` را مستقیماً همان شیء
+ * تخت `{items: [...], order: [...]}` برمی‌گرداند (بدون یک لایه‌ی آرایه‌ی
+ * اضافه در بیرون). قیمت نهایی: اولویت با `data.order[0].total_price`
+ * (قیمت کل سفارش) است؛ اگر نبود fallback به `data.items[0].price` (قیمت
+ * فقط همان آیتم — تنها فیلدی که در نمونه‌ی واقعی دیده شده تا امروز).
  */
 export async function getAlopeykQuote(
   creds: AlopeykCredentials,
@@ -292,7 +295,7 @@ export async function getAlopeykQuote(
       data?: {
         items?: { id?: string; price?: number | string }[];
         order?: { total_price?: number | string }[];
-      }[];
+      };
     };
     try {
       data = JSON.parse(rawText);
@@ -302,37 +305,12 @@ export async function getAlopeykQuote(
       );
     }
 
-    const result = data.data?.[0];
-
-    // TODO(لاگ موقت تشخیصی): برای بررسی گزارش «calc موفق است ولی الوپست در
-    // نتایج نهایی دیده نمی‌شود» — نشان می‌دهد شکل واقعی result دقیقاً با
-    // فرض کد (data.data یک آرایه، order/items هم آرایه) مطابقت دارد یا نه.
-    // بعد از پیدا شدن علت، حذف شود.
-    console.log("[Alopeyk] calc — تشخیص محل استخراج قیمت (تشخیصی)", {
-      isDataArray: Array.isArray(data.data),
-      resultKeys: result ? Object.keys(result) : null,
-      hasOrder: result?.order != null,
-      isOrderArray: Array.isArray(result?.order),
-      orderFirstTotalPrice: result?.order?.[0]?.total_price,
-      hasItems: result?.items != null,
-      isItemsArray: Array.isArray(result?.items),
-      itemsFirstPrice: result?.items?.[0]?.price,
-    });
-
+    // ⚠️ برخلاف فرض اولیه (مطابق مستندات)، data خودش شیء تخت {items, order}
+    // است، نه یک آرایه با یک عضو — تایید‌شده با پاسخ واقعی production (رگرسیونی
+    // که باعث شده بود الوپست با وجود calc موفق از نتایج حذف شود).
+    const result = data.data;
     const raw = result?.order?.[0]?.total_price ?? result?.items?.[0]?.price;
     const totalPrice = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN;
-
-    // TODO(لاگ موقت تشخیصی): همراه لاگ بالا — بعد از پیدا شدن علت، حذف شود.
-    console.log("[Alopeyk] calc — نتیجه‌ی نهایی استخراج قیمت", {
-      rawExtractedValue: raw,
-      totalPrice,
-      sourceField:
-        result?.order?.[0]?.total_price != null
-          ? "order[0].total_price"
-          : result?.items?.[0]?.price != null
-            ? "items[0].price"
-            : "هیچ‌کدام یافت نشد",
-    });
 
     if (!Number.isFinite(totalPrice)) {
       console.error("[Alopeyk] calc قیمت معتبر برنگرداند (نه order.total_price نه items.price)", {

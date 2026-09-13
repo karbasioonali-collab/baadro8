@@ -163,7 +163,7 @@ test("getAlopeykQuote — بدنه‌ی درخواست دقیقاً طبق مس�
           ok: true,
           status: 200,
           text: async () =>
-            JSON.stringify({ data: [{ items: [{ id: "1", price: 50000 }], order: [{ total_price: 55000 }] }] }),
+            JSON.stringify({ data: { items: [{ id: "1", price: 50000 }], order: [{ total_price: 55000 }] } }),
         } as Response;
       },
       async () => {
@@ -199,20 +199,20 @@ test("getAlopeykQuote — بدنه‌ی درخواست دقیقاً طبق مس�
           "101",
           "drop باید همیشه پر باشد، حتی برای مسیر بین‌شهری"
         );
-        assert.equal(quote?.totalPrice, 55000, "اولویت با order[0].total_price است");
+        assert.equal(quote?.totalPrice, 55000, "اولویت با data.order[0].total_price است");
       }
     )
   );
 });
 
-test("getAlopeykQuote — fallback به items[0].price وقتی order نبود", async () => {
+test("getAlopeykQuote — fallback به data.items[0].price وقتی order نبود", async () => {
   await withSilencedConsoleError(() =>
     withMockFetch(
       async () =>
         ({
           ok: true,
           status: 200,
-          text: async () => JSON.stringify({ data: [{ items: [{ id: "1", price: 42000 }] }] }),
+          text: async () => JSON.stringify({ data: { items: [{ id: "1", price: 42000 }] } }),
         }) as Response,
       async () => {
         const quote = await getAlopeykQuote(baseCreds, {
@@ -234,11 +234,64 @@ test("getAlopeykQuote — fallback به items[0].price وقتی order نبود",
   );
 });
 
+// رگرسیون واقعی production (۱۴۰۵/۰۶/۲۲): calc موفق بود ولی الوپست در نتایج
+// نهایی دیده نمی‌شد، چون کد فرض کرده بود data یک آرایه است (طبق مستندات:
+// data: [{items, order}])، در حالی که پاسخ واقعی الوپست data را مستقیم به
+// شکل شیء تخت {items: [...]} برمی‌گرداند (بدون order، و بدون لایه‌ی آرایه‌ی
+// بیرونی). این تست دقیقاً همان نمونه‌ی واقعی گزارش‌شده را mock می‌کند تا این
+// رگرسیون دیگر برنگردد.
+test("getAlopeykQuote — رگرسیون: نمونه‌ی واقعی production که data شیء تخت است نه آرایه", async () => {
+  await withSilencedConsoleError(() =>
+    withMockFetch(
+      async () =>
+        ({
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              status: 1,
+              message: "ok",
+              data: {
+                items: [
+                  {
+                    id: "1",
+                    price: 151900,
+                    breakdown: { base: 151900 },
+                    parcel: { size: 5, weight: 2000, worth: 100000 },
+                  },
+                ],
+              },
+            }),
+        }) as Response,
+      async () => {
+        const quote = await getAlopeykQuote(baseCreds, {
+          pickDate: "2026-08-10",
+          pickSlotId: "s1",
+          dropDate: "2026-08-11",
+          dropSlotId: "d1",
+          pickLat: 35.7,
+          pickLng: 51.4,
+          destinationCityCode: "101",
+          size: 5,
+          weightGrams: 2000,
+          worthToman: 100000,
+          packaging: 0,
+        });
+        assert.equal(
+          quote?.totalPrice,
+          151900,
+          "با data شیء تخت (بدون order)، باید از data.items[0].price استخراج شود"
+        );
+      }
+    )
+  );
+});
+
 test("getAlopeykQuote — بدون هیچ قیمت معتبر → null، نه throw", async () => {
   await withSilencedConsoleError(() =>
     withMockFetch(
       async () =>
-        ({ ok: true, status: 200, text: async () => JSON.stringify({ status: 0, message: "no route", data: [] }) }) as Response,
+        ({ ok: true, status: 200, text: async () => JSON.stringify({ status: 0, message: "no route", data: {} }) }) as Response,
       async () => {
         const quote = await getAlopeykQuote(baseCreds, {
           pickDate: "d",

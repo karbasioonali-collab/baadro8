@@ -415,14 +415,6 @@ export class ExternalApiProvider implements PriceProvider {
       packaging: ALOPEYK_DEFAULT_PACKAGING,
     });
 
-    // TODO(لاگ موقت تشخیصی): برای بررسی گزارش «calc موفق است ولی الوپست در
-    // نتایج نهایی دیده نمی‌شود» — نشان می‌دهد getAlopeykQuote دقیقاً چه چیزی
-    // برگردانده (null یا totalPrice معتبر). بعد از پیدا شدن علت، حذف شود.
-    console.log("[Alopeyk] getAlopeykQuoteResult — پاسخ getAlopeykQuote", {
-      companyId: input.companyId,
-      quote,
-    });
-
     if (quote == null) {
       console.error("[Alopeyk] در نتیجه، این شرکت از مقایسه قیمت حذف شد", {
         companyId: input.companyId,
@@ -433,12 +425,6 @@ export class ExternalApiProvider implements PriceProvider {
     // طبق مستندات، worth/weight نیاز به تبدیل واحد ندارند و calc مستقیماً
     // تومان برمی‌گرداند — پس بدون هیچ ضرب/تقسیمی.
     const price = Math.round(quote.totalPrice);
-
-    // TODO(لاگ موقت تشخیصی): همراه لاگ بالا — بعد از پیدا شدن علت، حذف شود.
-    console.log("[Alopeyk] getAlopeykQuoteResult — available:true، وارد لیست نتایج می‌شود", {
-      companyId: input.companyId,
-      price,
-    });
 
     return {
       available: true,
