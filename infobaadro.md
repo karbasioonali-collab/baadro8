@@ -1070,6 +1070,29 @@ DTS یک جدول قیمت جدید‌تر فرستاد — قیمت‌ها حد
 
 **کامیت:** `9ccd254`
 
+### ۱۴۰۵/۰۵/۱۸ (۲۰۲۶-۰۸-۰۶) — افزودن شرکت الوپست (external_api) — فقط استعلام قیمت calc
+
+سومین provider واقعی `external_api` بعد از چاپار/تاپین اضافه شد — مستندات کامل و تایید‌شده (بدون حدس)، برخلاف چاپار/تاپین که با کشف تدریجی از لاگ production پیش رفتند.
+
+**فایل‌های جدید و مستقل (`src/lib/alopeyk/`):**
+- `client.ts`: `isAlopeykBaseUrl()` (hostname `api.alopeyk.com`)، `parseAlopeykCredentials()` (برخلاف چاپار/تاپین، الوپست فقط یک توکن ساده لازم دارد — کل مقدار `Company.apiKey` همان توکن Bearer است، بدون جداکننده)، `getAlopeykProvinces`/`getAlopeykCities` (GET ساده، لیست تخت بدون صفحه‌بندی)، `getAlopeykEarliestSlot` (GET `client/time` — طبق تصمیم کارفرما، بازه‌ی زمانی هیچ‌وقت به مشتری نمایش داده نمی‌شود؛ همیشه اولین گزینه‌ی هر سطح آرایه خودکار انتخاب می‌شود — ⚠️ با این فرض تایید‌نشده که پاسخ API از قبل به ترتیب زمانی مرتب است)، `mapToAlopeykSize()` (نگاشت ابعاد به size ۱-۷؛ پاکت همیشه ۱؛ بسته با مقایسه‌ی نزولی-مرتب‌شده‌ی ابعاد در برابر آستانه‌ها — یعنی چرخش بسته را هم در نظر می‌گیرد؛ بزرگ‌تر از ۴۵×۲۵×۲۰ → `null`)، `getAlopeykQuote` (POST `client/calc` با هدر `Authorization: Bearer`؛ `drop` همیشه پر می‌شود چون طبق مستندات برای بین‌شهری هم فعلاً اجباری است؛ قیمت نهایی با اولویت `order[0].total_price`، fallback به `items[0].price`؛ یک لاگ خام دائمی درخواست/پاسخ — همان الگوی چاپار/تاپین).
+- `city-map.ts`: `resolveAlopeykCityCode()` — چون لیست شهرهای الوپست تخت است (نه تفکیک‌شده به‌ازای استان مثل تاپین)، فقط یک کش تک‌سطحی لازم است؛ از همان ابتدا **هر دو درس آموخته‌شده‌ی تاپین** اعمال شدند: فقط نتیجه‌ی غیرخالی کش می‌شود، و یک مکانیزم single-flight (نه فقط بعد از یک حادثه‌ی جداگانه، مثل تاپین) از اول وجود دارد.
+
+**گپ واقعی پیدا و رفع شد (بدون migration):** `calc` الوپست به `pick.location.lat/lng` مبدا نیاز دارد، ولی `PriceQuoteInput`/`QuoteRequest` تا الان اصلاً مختصات GPS نداشتند — فقط نام شهر/استان. `Address.lat/lng` از قبل در دیتابیس وجود داشت (و `MapPicker` هم از قبل آن را جمع می‌کرد)، فقط در لایه‌ی قیمت‌گذاری جریان نداشت. `originLat`/`originLng` به `PriceQuoteInput` (`types.ts`) و `QuoteRequest` (`engine.ts`) اضافه و در تمام مسیرهای مصرف‌کننده جریان داده شد: `HomeServiceFlow.tsx` (`submit()` به URL اضافه می‌کند، `ParcelDetailsStep` هم برای پیش‌نمایش زنده می‌گیرد)، `ParcelDetailsStep.tsx` (prop جدید + وابستگی effect)، `results/page.tsx` (از `searchParams` می‌خواند)، `actions/orders.ts` (از `origin.lat/lng` که قبلاً هم از طریق `addressSchema` موجود بود). این پلمبینگِ کد TypeScript محض بود، هیچ ستون/مدل جدیدی به `schema.prisma` اضافه نشد.
+
+**اتصال به موتور (`external-api-provider.ts`):** شاخه‌ی جدید `isAlopeykBaseUrl` قبل از شاخه‌ی چاپار اضافه شد (بعد از شاخه‌ی تاپین)، با متد خصوصی `getAlopeykQuoteResult`. منطق چاپار/تاپین کاملاً دست‌نخورده ماند.
+
+**تست‌های واحد (۱۶ تست جدید، `client.test.ts` + `city-map.test.ts`):** پاسخ موفق/خالی/خطا برای هر endpoint، نگاشت size (شامل تشخیص چرخش ابعاد و رد بسته‌ی بزرگ‌تر از حد مجاز)، ساختار دقیق بدنه‌ی calc (`pick.location`، `drop` همیشه پر، `parcel.weight/worth/size/packaging`)، اولویت `order.total_price` بر `items.price`، `throw` روی خطای HTTP/شبکه (برای `safeGetQuote` بالادستی)، و کش/single-flight/normalize نگاشت شهر. با بقیه‌ی تست‌های پروژه، اکنون هر ۳۸ تست (`npm test`) سبزند. `npx tsc --noEmit`/`npx eslint` روی تمام فایل‌های جدید/تغییریافته تمیز.
+
+**نکات مستندنشده که با تست واقعی باید تایید شوند (صادقانه مستند، نه ادعای قطعی):**
+- ترتیب واقعی `client/time` (آیا واقعاً data[0]/slots[0]/... زودترین گزینه است).
+- کدام فیلد قیمت نهایی واقعی است (`order.total_price` یا `items.price`).
+- مقدار درست `packaging` (فعلاً همیشه `0`).
+
+بدون migration.
+
+**کامیت:** `TBD`
+
 ---
 
 *این فایل به‌صورت خودکار توسط دستیار پس از هر تغییر مهم به‌روزرسانی می‌شود.*
