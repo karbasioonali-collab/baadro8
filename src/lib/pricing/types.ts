@@ -21,6 +21,13 @@ export type PriceQuoteInput = {
   serviceType: "intercity" | "intracity";
   originProvince?: string;
   originCity: string;
+  // مختصات GPS مبدا — از همان lat/lng که MapPicker موقع انتخاب آدرس مبدا
+  // جمع‌آوری می‌کند (Address.lat/lng در دیتابیس از قبل وجود دارند؛ این
+  // فقط بستری در لایه‌ی قیمت‌گذاری بود که کم داشت). فقط الوپست فعلاً به
+  // این نیاز دارد (calc با pick.location.lat/lng)، ولی چون این ورودی
+  // مشترک همه‌ی providerهاست، اینجا و نه فقط در یک provider اضافه شد.
+  originLat?: number;
+  originLng?: number;
   destinationProvince?: string;
   destinationCity: string;
   parcelType: "envelope" | "package";

@@ -43,6 +43,8 @@ export type CompanyQuote = {
 export type QuoteRequest = {
   originProvince: string;
   originCity: string;
+  originLat?: number;
+  originLng?: number;
   destinationProvince: string;
   destinationCity: string;
   parcelType: "envelope" | "package";
@@ -97,6 +99,8 @@ export async function getQuotesForRequest(
         serviceType,
         originProvince: req.originProvince,
         originCity: req.originCity,
+        originLat: req.originLat,
+        originLng: req.originLng,
         destinationProvince: req.destinationProvince,
         destinationCity: req.destinationCity,
         parcelType: req.parcelType,
@@ -144,6 +148,8 @@ export async function getQuoteForCompany(
     serviceType,
     originProvince: req.originProvince,
     originCity: req.originCity,
+    originLat: req.originLat,
+    originLng: req.originLng,
     destinationProvince: req.destinationProvince,
     destinationCity: req.destinationCity,
     parcelType: req.parcelType,

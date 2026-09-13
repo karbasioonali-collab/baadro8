@@ -82,6 +82,8 @@ export async function createOrderBatchAction(
       getQuoteForCompany(companyId, {
         originProvince: origin.province,
         originCity: origin.city,
+        originLat: origin.lat,
+        originLng: origin.lng,
         destinationProvince: parcel.destination.province,
         destinationCity: parcel.destination.city,
         parcelType: parcel.parcelType,

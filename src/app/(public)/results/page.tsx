@@ -9,6 +9,8 @@ export const metadata: Metadata = { title: "نتایج مقایسه قیمت" };
 type SearchParams = {
   originProvince?: string;
   originCity?: string;
+  originLat?: string;
+  originLng?: string;
   destinationProvince?: string;
   destinationCity?: string;
   parcelType?: "envelope" | "package";
@@ -50,6 +52,8 @@ export default async function ResultsPage({
   const quotes = await getQuotesForRequest({
     originProvince: sp.originProvince!,
     originCity: sp.originCity!,
+    originLat: sp.originLat ? Number(sp.originLat) : undefined,
+    originLng: sp.originLng ? Number(sp.originLng) : undefined,
     destinationProvince: sp.destinationProvince!,
     destinationCity: sp.destinationCity!,
     parcelType: sp.parcelType!,

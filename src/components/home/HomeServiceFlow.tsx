@@ -158,6 +158,8 @@ export function HomeServiceFlow({
 
     const originProvince = serviceType === "intracity" ? icProvince : ieOrigin.province;
     const originCity = serviceType === "intracity" ? icCity : ieOrigin.city;
+    const originLat = serviceType === "intracity" ? icOrigin.lat : ieOrigin.lat;
+    const originLng = serviceType === "intracity" ? icOrigin.lng : ieOrigin.lng;
     const destinationProvince = serviceType === "intracity" ? icProvince : ieDestProvince;
     const destinationCity = serviceType === "intracity" ? icCity : ieDestCity;
 
@@ -168,6 +170,8 @@ export function HomeServiceFlow({
       destinationCity,
       parcelType: parcel.parcelType,
     });
+    if (originLat != null) params.set("originLat", String(originLat));
+    if (originLng != null) params.set("originLng", String(originLng));
     if (parcel.parcelType === "envelope") params.set("envelopeTypeId", parcel.envelopeTypeId);
     if (parcel.parcelType === "package" && needsWeight) {
       params.set("weightGrams", parcel.weightGrams);
@@ -377,6 +381,8 @@ export function HomeServiceFlow({
             serviceType={serviceType ?? "intercity"}
             originProvince={serviceType === "intracity" ? icProvince : ieOrigin.province}
             originCity={serviceType === "intracity" ? icCity : ieOrigin.city}
+            originLat={serviceType === "intracity" ? icOrigin.lat : ieOrigin.lat}
+            originLng={serviceType === "intracity" ? icOrigin.lng : ieOrigin.lng}
             destinationProvince={serviceType === "intracity" ? icProvince : ieDestProvince}
             destinationCity={serviceType === "intracity" ? icCity : ieDestCity}
           />

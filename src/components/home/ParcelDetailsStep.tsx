@@ -34,6 +34,8 @@ export function ParcelDetailsStep({
   serviceType,
   originProvince,
   originCity,
+  originLat,
+  originLng,
   destinationProvince,
   destinationCity,
 }: {
@@ -44,6 +46,9 @@ export function ParcelDetailsStep({
   serviceType: "intracity" | "intercity";
   originProvince: string;
   originCity: string;
+  /** مختصات GPS مبدا (از MapPicker) — فقط الوپست فعلاً به این نیاز دارد */
+  originLat?: number | null;
+  originLng?: number | null;
   destinationProvince: string;
   destinationCity: string;
 }) {
@@ -71,6 +76,8 @@ export function ParcelDetailsStep({
         const price = await getApproximatePriceAction({
           originProvince,
           originCity,
+          originLat: originLat ?? undefined,
+          originLng: originLng ?? undefined,
           destinationProvince,
           destinationCity,
           parcelType: "package",
@@ -99,6 +106,8 @@ export function ParcelDetailsStep({
     destinationCity,
     originProvince,
     destinationProvince,
+    originLat,
+    originLng,
   ]);
 
   return (
