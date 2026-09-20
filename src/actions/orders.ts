@@ -86,6 +86,8 @@ export async function createOrderBatchAction(
         originLng: origin.lng,
         destinationProvince: parcel.destination.province,
         destinationCity: parcel.destination.city,
+        destinationLat: parcel.destination.lat,
+        destinationLng: parcel.destination.lng,
         parcelType: parcel.parcelType,
         weightGrams: parcel.weightGrams,
         lengthCm: parcel.lengthCm,

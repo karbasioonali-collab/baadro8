@@ -162,6 +162,8 @@ export function HomeServiceFlow({
     const originLng = serviceType === "intracity" ? icOrigin.lng : ieOrigin.lng;
     const destinationProvince = serviceType === "intracity" ? icProvince : ieDestProvince;
     const destinationCity = serviceType === "intracity" ? icCity : ieDestCity;
+    const destinationLat = serviceType === "intracity" ? icDestination.lat : ieDestination.lat;
+    const destinationLng = serviceType === "intracity" ? icDestination.lng : ieDestination.lng;
 
     const params = new URLSearchParams({
       originProvince,
@@ -172,6 +174,8 @@ export function HomeServiceFlow({
     });
     if (originLat != null) params.set("originLat", String(originLat));
     if (originLng != null) params.set("originLng", String(originLng));
+    if (destinationLat != null) params.set("destinationLat", String(destinationLat));
+    if (destinationLng != null) params.set("destinationLng", String(destinationLng));
     if (parcel.parcelType === "envelope") params.set("envelopeTypeId", parcel.envelopeTypeId);
     if (parcel.parcelType === "package" && needsWeight) {
       params.set("weightGrams", parcel.weightGrams);
@@ -385,6 +389,8 @@ export function HomeServiceFlow({
             originLng={serviceType === "intracity" ? icOrigin.lng : ieOrigin.lng}
             destinationProvince={serviceType === "intracity" ? icProvince : ieDestProvince}
             destinationCity={serviceType === "intracity" ? icCity : ieDestCity}
+            destinationLat={serviceType === "intracity" ? icDestination.lat : ieDestination.lat}
+            destinationLng={serviceType === "intracity" ? icDestination.lng : ieDestination.lng}
           />
           <NextButton onClick={submit}>استعلام قیمت</NextButton>
         </StepShell>

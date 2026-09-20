@@ -13,6 +13,8 @@ type SearchParams = {
   originLng?: string;
   destinationProvince?: string;
   destinationCity?: string;
+  destinationLat?: string;
+  destinationLng?: string;
   parcelType?: "envelope" | "package";
   envelopeTypeId?: string;
   weightGrams?: string;
@@ -56,6 +58,8 @@ export default async function ResultsPage({
     originLng: sp.originLng ? Number(sp.originLng) : undefined,
     destinationProvince: sp.destinationProvince!,
     destinationCity: sp.destinationCity!,
+    destinationLat: sp.destinationLat ? Number(sp.destinationLat) : undefined,
+    destinationLng: sp.destinationLng ? Number(sp.destinationLng) : undefined,
     parcelType: sp.parcelType!,
     weightGrams: sp.weightGrams ? Number(sp.weightGrams) : undefined,
     lengthCm: sp.lengthCm ? Number(sp.lengthCm) : undefined,

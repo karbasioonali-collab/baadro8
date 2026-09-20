@@ -15,6 +15,11 @@ import {
   parseAlopeykCredentials,
 } from "@/lib/alopeyk/client";
 import { resolveAlopeykCityCode } from "@/lib/alopeyk/city-map";
+import {
+  getAlopeykPeykQuote,
+  isAlopeykPeykBaseUrl,
+  parseAlopeykPeykCredentials,
+} from "@/lib/alopeyk-peyk/client";
 import type { PriceProvider, PriceQuoteInput, PriceQuoteResult } from "./types";
 
 /** حداقل وزن معتبر برای بسته (کیلوگرم) — دقیقاً همان حداقلی که خودِ بادرو موقع ثبت سفارش اجبار می‌کند (packageSchema، ۱۰۰ گرم). وزن کمتر از این یعنی داده هنوز کامل نیست (مثلاً درخواست پیش‌نمایش زنده وسط تایپ کاربر)، نه یک سفارش واقعی. */
@@ -71,16 +76,25 @@ const ALOPEYK_DEFAULT_PACKAGING: 0 | 1 = 0;
  * روش pricing_source_type = external_api — بادرو در این حالت مصرف‌کننده
  * (Client) است. تشخیص provider واقعی بر اساس hostname در Company.apiBaseUrl
  * انجام می‌شود: چاپار (Chaparnet, app.krch.ir)، تاپین (Tapin, api.tapin.ir)،
- * و الوپست (Alopeyk, api.alopeyk.com). برای شرکت‌های دیگری که در آینده
- * apiBaseUrl متفاوتی داشته باشند، تا وقتی provider اختصاصی‌شان نوشته
- * نشود، available:false برمی‌گردد.
+ * الوپست (Alopeyk پستی، api.alopeyk.com/alopost-service)، و الوپیک (Alopeyk
+ * پیک موتوری، api.alopeyk.com بدون /alopost-service). برای شرکت‌های دیگری
+ * که در آینده apiBaseUrl متفاوتی داشته باشند، تا وقتی provider
+ * اختصاصی‌شان نوشته نشود، available:false برمی‌گردد.
+ *
+ * ⚠️ نکته‌ی حیاتی ترتیب چک‌ها: الوپست و الوپیک هر دو روی هاست
+ * «api.alopeyk.com» هستند (فقط path فرق دارد) — isAlopeykBaseUrl (الوپست)
+ * فقط hostname را چک می‌کند، پس اگر isAlopeykPeykBaseUrl (الوپیک) بعد از
+ * آن چک می‌شد، هیچ‌وقت اجرا نمی‌شد (همه‌چیز اول توسط شاخه‌ی الوپست قاپیده
+ * می‌شد). به همین دلیل چک الوپیک عمداً **قبل از** چک الوپست آمده. به
+ * کامنت isAlopeykPeykBaseUrl در src/lib/alopeyk-peyk/client.ts مراجعه شود.
  *
  * ⚠️ کل بدنه‌ی getQuote (و متدهای خصوصی‌ای که از داخل آن صدا زده می‌شوند،
- * از جمله getTapinQuoteResult/getAlopeykQuoteResult) داخل یک try/catch
- * است (علاوه بر safeGetQuote در engine.ts که همه‌ی providerها را پوشش
- * می‌دهد) — طبق درس حادثه‌ی page_automation (infobaadro.md)، هیچ خطای
- * شبکه/parse این provider نباید بتواند بقیه‌ی شرکت‌ها یا کل درخواست را
- * تحت تاثیر قرار دهد؛ فقط همین شرکت با available:false از نتایج حذف می‌شود.
+ * از جمله getTapinQuoteResult/getAlopeykQuoteResult/getAlopeykPeykQuoteResult)
+ * داخل یک try/catch است (علاوه بر safeGetQuote در engine.ts که همه‌ی
+ * providerها را پوشش می‌دهد) — طبق درس حادثه‌ی page_automation
+ * (infobaadro.md)، هیچ خطای شبکه/parse این provider نباید بتواند بقیه‌ی
+ * شرکت‌ها یا کل درخواست را تحت تاثیر قرار دهد؛ فقط همین شرکت با
+ * available:false از نتایج حذف می‌شود.
  */
 export class ExternalApiProvider implements PriceProvider {
   async getQuote(input: PriceQuoteInput): Promise<PriceQuoteResult> {
@@ -88,6 +102,10 @@ export class ExternalApiProvider implements PriceProvider {
       const company = await prisma.company.findUnique({ where: { id: input.companyId } });
       if (!company?.apiBaseUrl) {
         return { available: false, reason: "این شرکت به API متصل نیست" };
+      }
+
+      if (isAlopeykPeykBaseUrl(company.apiBaseUrl)) {
+        return await this.getAlopeykPeykQuoteResult(company.apiBaseUrl, company.apiKey, input);
       }
 
       if (isTapinBaseUrl(company.apiBaseUrl)) {
@@ -433,6 +451,74 @@ export class ExternalApiProvider implements PriceProvider {
       // Placeholder — طبق دستور کارفرما، تا migration زمان تحویل انجام
       // نشده (در لیست کارهای منتظر)، یک بازه‌ی منطقی ثابت است.
       estimatedDeliveryDays: [2, 4],
+    };
+  }
+
+  /**
+   * الوپیک (Alopeyk — پیک موتوری درون‌شهری، هاست مشترک با الوپست ولی
+   * path متفاوت، به src/lib/alopeyk-peyk/client.ts مراجعه شود). فقط
+   * transport_type="motor_taxi" پیاده شده — طبق تاکید صریح کارفرما، هیچ
+   * transport_type مربوط به جابه‌جایی مسافر پیاده/مستند نمی‌شود.
+   *
+   * برخلاف الوپست (که فقط مبدا لازم دارد)، calc الوپیک هم مختصات GPS
+   * مبدا و هم مقصد می‌خواهد (input.originLat/Lng و input.destinationLat/Lng
+   * — هر دو تازه در این تغییر به PriceQuoteInput/QuoteRequest اضافه شدند،
+   * دقیقاً مثل originLat/Lng که برای الوپست اضافه شده بود). اگر هرکدام
+   * موجود نباشد، طبق دستور کارفرما، بی‌صدا (بدون throw، بدون console.error)
+   * available:false برمی‌گردد — نه یک حالت غیرمنتظره، بلکه یعنی کاربر
+   * هنوز نقشه را انتخاب نکرده (مثلاً وسط پیش‌نمایش زنده).
+   *
+   * این متد هم مثل getAlopeykQuoteResult از داخل try/catch سراسری getQuote
+   * صدا زده می‌شود — هر خطای شبکه/parse همان‌جا گرفته و به available:false
+   * تبدیل می‌شود، بدون تاثیر روی بقیه‌ی شرکت‌ها.
+   */
+  private async getAlopeykPeykQuoteResult(
+    apiBaseUrl: string,
+    apiKey: string | null,
+    input: PriceQuoteInput
+  ): Promise<PriceQuoteResult> {
+    const creds = parseAlopeykPeykCredentials(apiKey);
+    if (!creds) {
+      return { available: false, reason: "تنظیمات احراز هویت API این شرکت ناقص است" };
+    }
+
+    if (
+      input.originLat == null ||
+      input.originLng == null ||
+      input.destinationLat == null ||
+      input.destinationLng == null
+    ) {
+      return { available: false, reason: "موقعیت مبدا/مقصد (نقشه) برای استعلام قیمت الوپیک مشخص نیست" };
+    }
+
+    const alopeykPeykCreds = { baseUrl: apiBaseUrl, ...creds };
+
+    const quote = await getAlopeykPeykQuote(alopeykPeykCreds, {
+      originLat: input.originLat,
+      originLng: input.originLng,
+      destinationLat: input.destinationLat,
+      destinationLng: input.destinationLng,
+    });
+
+    if (quote == null) {
+      console.error("[AlopeykPeyk] در نتیجه، این شرکت از مقایسه قیمت حذف شد", {
+        companyId: input.companyId,
+      });
+      return { available: false, reason: "الوپیک برای این مسیر قیمتی برنگرداند" };
+    }
+
+    // ⚠️ واحد price الوپیک با مستندات کارفرما تایید نشده — فرض بر تومان
+    // (هم‌راستا با بقیه‌ی providerها)، به کامنت getAlopeykPeykQuote در
+    // src/lib/alopeyk-peyk/client.ts مراجعه شود.
+    const price = Math.round(quote.totalPrice);
+
+    return {
+      available: true,
+      price,
+      breakdown: { قیمت_کل: price },
+      // پیک موتوری درون‌شهری — همان بازه‌ی «همان‌روز» که برای بقیه‌ی
+      // providerهای intracity استفاده می‌شود (internal-formula-provider.ts).
+      estimatedDeliveryDays: [0, 1],
     };
   }
 }

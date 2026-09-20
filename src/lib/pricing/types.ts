@@ -23,13 +23,22 @@ export type PriceQuoteInput = {
   originCity: string;
   // مختصات GPS مبدا — از همان lat/lng که MapPicker موقع انتخاب آدرس مبدا
   // جمع‌آوری می‌کند (Address.lat/lng در دیتابیس از قبل وجود دارند؛ این
-  // فقط بستری در لایه‌ی قیمت‌گذاری بود که کم داشت). فقط الوپست فعلاً به
-  // این نیاز دارد (calc با pick.location.lat/lng)، ولی چون این ورودی
-  // مشترک همه‌ی providerهاست، اینجا و نه فقط در یک provider اضافه شد.
+  // فقط بستری در لایه‌ی قیمت‌گذاری بود که کم داشت). الوپست به این نیاز
+  // دارد (calc با pick.location.lat/lng)، ولی چون این ورودی مشترک همه‌ی
+  // providerهاست، اینجا و نه فقط در یک provider اضافه شد.
   originLat?: number;
   originLng?: number;
   destinationProvince?: string;
   destinationCity: string;
+  // مختصات GPS مقصد — همان الگوی originLat/originLng بالا، فقط برای آدرس
+  // مقصد. الوپیک (پیک موتوری درون‌شهری) به این نیاز دارد چون calc آن
+  // addresses:[{type:"origin",...},{type:"destination",...}] می‌خواهد، نه
+  // فقط مبدا. در UI فعلاً فقط مرحله‌ی «آدرس مقصد» پیک درون‌شهری
+  // (ic-destination در HomeServiceFlow) نقشه‌ی مقصد را اجباری جمع‌آوری
+  // می‌کند؛ برای ارسال پستی بین‌شهری نقشه‌ی مقصد اختیاری است (و برای
+  // الوپیک هم مهم نیست چون فقط درون‌شهری است).
+  destinationLat?: number;
+  destinationLng?: number;
   parcelType: "envelope" | "package";
   weightGrams?: number;
   lengthCm?: number;

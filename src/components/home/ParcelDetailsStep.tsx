@@ -38,6 +38,8 @@ export function ParcelDetailsStep({
   originLng,
   destinationProvince,
   destinationCity,
+  destinationLat,
+  destinationLng,
 }: {
   value: ParcelDetailsValue;
   onChange: (v: ParcelDetailsValue) => void;
@@ -46,11 +48,14 @@ export function ParcelDetailsStep({
   serviceType: "intracity" | "intercity";
   originProvince: string;
   originCity: string;
-  /** مختصات GPS مبدا (از MapPicker) — فقط الوپست فعلاً به این نیاز دارد */
+  /** مختصات GPS مبدا (از MapPicker) — الوپست/الوپیک به این نیاز دارند */
   originLat?: number | null;
   originLng?: number | null;
   destinationProvince: string;
   destinationCity: string;
+  /** مختصات GPS مقصد (از MapPicker) — فقط الوپیک (پیک درون‌شهری) به این نیاز دارد */
+  destinationLat?: number | null;
+  destinationLng?: number | null;
 }) {
   const needsWeight = serviceType !== "intracity";
   const [, startTransition] = useTransition();
@@ -80,6 +85,8 @@ export function ParcelDetailsStep({
           originLng: originLng ?? undefined,
           destinationProvince,
           destinationCity,
+          destinationLat: destinationLat ?? undefined,
+          destinationLng: destinationLng ?? undefined,
           parcelType: "package",
           weightGrams: needsWeight ? Number(value.weightGrams) : undefined,
           lengthCm: value.lengthCm ? Number(value.lengthCm) : undefined,
@@ -108,6 +115,8 @@ export function ParcelDetailsStep({
     destinationProvince,
     originLat,
     originLng,
+    destinationLat,
+    destinationLng,
   ]);
 
   return (
