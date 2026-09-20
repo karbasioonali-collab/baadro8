@@ -76,7 +76,11 @@ test("getAlopeykPeykQuote — بدنه‌ی درخواست دقیقاً طبق �
           ok: true,
           status: 200,
           text: async () =>
-            JSON.stringify({ data: { price: 38000, distance: 4200, duration: 720, credit: 0, user_credit: 0 } }),
+            JSON.stringify({
+              status: "success",
+              message: null,
+              object: { final_price: 38000, distance: 4200, duration: 720, hurry: 45000 },
+            }),
         } as Response;
       },
       async () => {
@@ -99,19 +103,65 @@ test("getAlopeykPeykQuote — بدنه‌ی درخواست دقیقاً طبق �
           { type: "origin", lat: "35.7", lng: "51.4" },
           { type: "destination", lat: "35.75", lng: "51.45" },
         ]);
-        assert.equal(quote?.totalPrice, 38000);
+        assert.equal(quote?.totalPrice, 38000, "قیمت باید از object.final_price بیاید");
         assert.equal(quote?.distanceMeters, 4200);
         assert.equal(quote?.durationSeconds, 720);
+        assert.equal(quote?.hurryPrice, 45000, "hurry باید نگه‌داشته شود (فقط اطلاعاتی)");
       }
     )
   );
 });
 
-test("getAlopeykPeykQuote — بدون data.price معتبر → null، نه throw", async () => {
+// رگرسیون واقعی production (۱۴۰۵/۰۷/۰۱): calc موفق بود ولی الوپیک در نتایج
+// نهایی دیده نمی‌شد، چون کد فرض کرده بود قیمت زیر data.price است، در حالی
+// که پاسخ واقعی الوپیک قیمت را زیر object.final_price برمی‌گرداند (بدون
+// هیچ فیلد data). این تست دقیقاً همان نمونه‌ی واقعی گزارش‌شده را mock
+// می‌کند تا این رگرسیون دیگر برنگردد.
+test("getAlopeykPeykQuote — رگرسیون: نمونه‌ی واقعی production (object.final_price، نه data.price)", async () => {
   await withSilencedConsoleError(() =>
     withMockFetch(
       async () =>
-        ({ ok: true, status: 200, text: async () => JSON.stringify({ status: 0, message: "no route", data: {} }) }) as Response,
+        ({
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              status: "success",
+              message: null,
+              object: {
+                addresses: [
+                  { type: "origin", lat: "35.7", lng: "51.4" },
+                  { type: "destination", lat: "35.75", lng: "51.45" },
+                ],
+                distance: 1132.5,
+                final_price: 226500,
+                hurry: 272000,
+                discount: 0,
+                discount_coupon: [],
+                scheduled: false,
+              },
+            }),
+        }) as Response,
+      async () => {
+        const quote = await getAlopeykPeykQuote(baseCreds, {
+          originLat: 35.7,
+          originLng: 51.4,
+          destinationLat: 35.75,
+          destinationLng: 51.45,
+        });
+        assert.equal(quote?.totalPrice, 226500, "با پاسخ واقعی، باید از object.final_price استخراج شود");
+        assert.equal(quote?.distanceMeters, 1132.5);
+        assert.equal(quote?.hurryPrice, 272000, "hurry نگه‌داشته می‌شود ولی روی totalPrice اثر ندارد");
+      }
+    )
+  );
+});
+
+test("getAlopeykPeykQuote — بدون object.final_price معتبر → null، نه throw", async () => {
+  await withSilencedConsoleError(() =>
+    withMockFetch(
+      async () =>
+        ({ ok: true, status: 200, text: async () => JSON.stringify({ status: "error", message: "no route", object: {} }) }) as Response,
       async () => {
         const quote = await getAlopeykPeykQuote(baseCreds, {
           originLat: 1,
@@ -170,7 +220,7 @@ test("getAlopeykPeykQuote — single-flight: فراخوانی هم‌زمان ب
       async () => {
         fetchCount++;
         await delay(20);
-        return { ok: true, status: 200, text: async () => JSON.stringify({ data: { price: 12000 } }) } as Response;
+        return { ok: true, status: 200, text: async () => JSON.stringify({ object: { final_price: 12000 } }) } as Response;
       },
       async () => {
         const params = { originLat: 10, originLng: 20, destinationLat: 30, destinationLng: 40 };
@@ -192,7 +242,7 @@ test("getAlopeykPeykQuote — بعد از پایان یک fetch، درخواست
     withMockFetch(
       async () => {
         fetchCount++;
-        return { ok: true, status: 200, text: async () => JSON.stringify({ data: { price: 5000 } }) } as Response;
+        return { ok: true, status: 200, text: async () => JSON.stringify({ object: { final_price: 5000 } }) } as Response;
       },
       async () => {
         const params = { originLat: 11, originLng: 21, destinationLat: 31, destinationLng: 41 };
@@ -211,7 +261,7 @@ test("getAlopeykPeykQuote — مختصات متفاوت هم‌زمان → sing
       async () => {
         fetchCount++;
         await delay(10);
-        return { ok: true, status: 200, text: async () => JSON.stringify({ data: { price: 9000 } }) } as Response;
+        return { ok: true, status: 200, text: async () => JSON.stringify({ object: { final_price: 9000 } }) } as Response;
       },
       async () => {
         await Promise.all([

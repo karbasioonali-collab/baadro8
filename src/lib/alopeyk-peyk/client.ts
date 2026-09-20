@@ -50,6 +50,8 @@ export type AlopeykPeykQuoteResult = {
   totalPrice: number;
   distanceMeters?: number;
   durationSeconds?: number;
+  /** قیمت فوری/اضطراری (object.hurry در پاسخ واقعی) — فعلاً فقط نگه‌داشته و لاگ می‌شود، در محاسبه‌ی قیمت نهایی استفاده نمی‌شود. */
+  hurryPrice?: number;
 };
 
 /**
@@ -63,21 +65,23 @@ export type AlopeykPeykQuoteResult = {
  * هدرهای اجباری روی همه‌ی endpointهای الوپیک (طبق مستندات کارفرما):
  * Authorization: Bearer <token> و X-Requested-With: XMLHttpRequest.
  *
- * ⚠️ شکل دقیق پاسخ (آیا data یک شیء تخت است یا آرایه، دقیقاً کدام
- * فیلدها زیر data هستند) با مستندات کارفرما تایید نشده — کارفرما فقط
- * لیست فیلدهای مورد انتظار (price, distance, duration, credit,
- * user_credit) را داده، نه یک نمونه‌ی کامل JSON. بر اساس درسی که تازه
- * از calc الوپست گرفتیم (پاسخ واقعی، برخلاف مستندات آن endpoint، data
- * را مستقیم به‌شکل شیء تخت برمی‌گرداند نه آرایه)، همین الگو این‌جا هم
- * به‌عنوان محتمل‌ترین حالت در نظر گرفته شده (`data.price`)؛ ولی این
- * صرفاً یک فرض مستندشده است، نه تایید‌شده با پاسخ واقعی این endpoint
- * خاص. دقیقاً به همین دلیل یک لاگ خام دائمی (نه موقت) اضافه شده تا اگر
- * فرض غلط بود، بلافاصله در لاگ production قابل تشخیص باشد — بدون نیاز
- * به یک دور بررسی جداگانه مثل چیزی که برای calc الوپست پیش آمد.
+ * ⚠️ رگرسیون واقعی production (۱۴۰۵/۰۷/۰۱): فرض اولیه («data شیء تخت با
+ * فیلد price») غلط از آب درآمد — دقیقاً همان کلاس باگی که برای calc
+ * الوپست هم پیش آمد (مستندات با واقعیت فرق داشت). طبق لاگ خام واقعی
+ * Liara، پاسخ واقعی این‌طور است:
+ * `{status:"success", message:null, object:{addresses:[...], distance,
+ * final_price, hurry, discount, discount_coupon, scheduled, ...}}`
+ * یعنی نه `data` بلکه `object`، و قیمت نهایی `object.final_price` است
+ * (نه `object.price`). این حالا **تایید‌شده با پاسخ واقعی** است، نه فرض.
+ * `object.hurry` (احتمالاً قیمت فوری/اضطراری) هم استخراج و نگه‌داشته
+ * می‌شود ولی در محاسبه‌ی قیمت نهایی دخالت داده نمی‌شود (طبق دستور
+ * کارفرما، فعلاً فقط برای مراحل بعد ذخیره/لاگ می‌شود). فیلدهای
+ * duration/credit/user_credit در نمونه‌ی واقعی دیده نشدند (پاسخ با «...»
+ * کوتاه شده بود) — استخراج آن‌ها best-effort و احتیاطی باقی مانده.
  *
- * واحد `price`: فرض بر تومان (هم‌راستا با بقیه‌ی providerهای بادرو)،
- * ولی این هم با مستندات کارفرما صراحتاً تایید نشده — باید با پاسخ واقعی
- * production تایید/اصلاح شود.
+ * واحد `final_price`: فرض بر تومان (هم‌راستا با بقیه‌ی providerهای
+ * بادرو)، ولی این هنوز با مستندات کارفرما صراحتاً تایید نشده — باید با
+ * بررسی مبلغ واقعی نمایش‌داده‌شده تایید/اصلاح شود.
  *
  * کش single-flight: چون چند call site (پیش‌نمایش زنده‌ی صفحه اصلی،
  * صفحه‌ی نتایج) می‌توانند تقریباً هم‌زمان دقیقاً همین مختصات مبدا/مقصد
@@ -175,9 +179,10 @@ async function fetchAlopeykPeykQuote(
 
     let data: {
       status?: unknown;
-      message?: string;
-      data?: {
-        price?: number | string;
+      message?: string | null;
+      object?: {
+        final_price?: number | string;
+        hurry?: number | string;
         distance?: number | string;
         duration?: number | string;
         credit?: number | string;
@@ -192,13 +197,13 @@ async function fetchAlopeykPeykQuote(
       );
     }
 
-    const result = data.data;
-    const rawPrice = result?.price;
+    const result = data.object;
+    const rawPrice = result?.final_price;
     const totalPrice =
       typeof rawPrice === "number" ? rawPrice : typeof rawPrice === "string" ? Number(rawPrice) : NaN;
 
     if (!Number.isFinite(totalPrice)) {
-      console.error("[AlopeykPeyk] calc قیمت معتبر برنگرداند (data.price یافت نشد)", {
+      console.error("[AlopeykPeyk] calc قیمت معتبر برنگرداند (object.final_price یافت نشد)", {
         rawResponseBody: rawText,
       });
       return null;
@@ -206,8 +211,9 @@ async function fetchAlopeykPeykQuote(
 
     const rawDistance = result?.distance;
     const rawDuration = result?.duration;
+    const rawHurry = result?.hurry;
 
-    return {
+    const parsedResult: AlopeykPeykQuoteResult = {
       totalPrice,
       distanceMeters:
         typeof rawDistance === "number"
@@ -221,7 +227,18 @@ async function fetchAlopeykPeykQuote(
           : typeof rawDuration === "string"
             ? Number(rawDuration)
             : undefined,
+      hurryPrice:
+        typeof rawHurry === "number" ? rawHurry : typeof rawHurry === "string" ? Number(rawHurry) : undefined,
     };
+
+    // طبق دستور کارفرما: hurry فعلاً فقط نگه‌داشته/لاگ می‌شود، در قیمت
+    // نهایی (totalPrice/final_price) هیچ نقشی ندارد.
+    console.error("[AlopeykPeyk] calc — final_price استخراج شد (hurry فقط اطلاعاتی است)", {
+      totalPrice,
+      hurryPrice: parsedResult.hurryPrice,
+    });
+
+    return parsedResult;
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       throw new AlopeykPeykApiError("تایم‌اوت اتصال به calc الوپیک");
