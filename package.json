@@ -25,6 +25,7 @@
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-is": "^19.3.1",
     "react-leaflet": "^5.0.0",
     "recharts": "^3.9.2",
     "tsx": "^4.23.1",
