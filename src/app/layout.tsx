@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 export const metadata: Metadata = {
   title: {
@@ -37,6 +38,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col bg-neutral-50 text-foreground">
         <ServiceWorkerRegister />
+        <GoogleAnalytics />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
