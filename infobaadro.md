@@ -1254,4 +1254,20 @@ DTS یک جدول قیمت جدید‌تر فرستاد — قیمت‌ها حد
 
 ---
 
+### ۱۴۰۵/۰۷/۲۸ (۲۰۲۶-۱۰-۲۰) — افزودن Google Analytics 4 + یافته‌ی مهم: container این جلسه اول روی شاخه‌ی اشتباه چک‌اوت شده بود
+
+**⚠️ یافته‌ی محیطی مهم (برای جلسات بعدی):** بعد از یک وقفه‌ی طولانی (حدود یک ماه)، این container با `node_modules` خالی شروع شد و مسیر کاری ریپو روی شاخه‌ی `claude/project-review-report-duli2z` (یک شاخه‌ی قدیمی و کاملاً نامرتبط، با تاریخچه‌ی کامیت متفاوت و بدون اسکریپت `test` در `package.json`) چک‌اوت شده بود — نه `claude/badrou-project-setup-x7hiag` که تمام این پروژه رویش کار می‌کند. قبل از هر commit/push، این مغایرت کشف و اصلاح شد (`git fetch` + `git checkout claude/badrou-project-setup-x7hiag`؛ دو فایل کار نیمه‌کاره‌ی GA4 که روی شاخه‌ی غلط ساخته شده بودند discard و بعد از سوییچ دوباره ساخته شدند — هیچ‌چیزی گم نشد، تاریخچه‌ی `origin/claude/badrou-project-setup-x7hiag` هم سالم و دست‌نخورده بود). درس برای جلسات بعد: همیشه اول `git branch --show-current` و `git log --oneline -5` چک شود، مخصوصاً بعد از یک وقفه‌ی طولانی بین جلسات.
+
+**تغییر اصلی:** Google Analytics 4 (`gtag.js`, Measurement ID: `G-G0BTDH4BHP`) به کل سایت اضافه شد:
+- فایل جدید `src/components/analytics/GoogleAnalytics.tsx` — دو `<Script>` از `next/script` با `strategy="afterInteractive"` (روش استاندارد مستندشده‌ی خودِ Next.js برای این نسخه، طبق `node_modules/next/dist/docs/01-app/02-guides/scripts.md` — بدون breaking change نسبت به API آموزش‌دیده). فقط `gtag('config', ID)` استاندارد صدا زده می‌شود — هیچ event دستی یا داده‌ی شخصی/حساس کاربر (موبایل، آدرس، مبلغ سفارش) ارسال نمی‌شود.
+- فقط در `production` فعال است (`NODE_ENV !== "production"` → `null`) — همان الگوی `ServiceWorkerRegister` موجود — تا ترافیک dev/پیش‌نمایش آمار GA را خراب نکند.
+- در `src/app/layout.tsx` (root layout) اضافه شد، پس روی تمام route groupها (public، admin، panel، company) بار می‌شود، نه فقط یک صفحه.
+- Measurement ID مستقیم hardcode شد، نه env var — چون یک شناسه‌ی عمومی است (در خودِ HTML صفحه هم دیده می‌شود)، نه یک راز.
+
+تست: `npx tsc --noEmit`/`npx eslint` تمیز، هر ۴۹ تست موجود سبز، و یک **production build کامل** (`next build`) هم با موفقیت روی تمام ۳۴ روت انجام شد (چک اضافه، چون این تغییر خودِ root layout مشترک همه‌ی صفحات را لمس می‌کرد). بدون migration (کاملاً frontend).
+
+**کامیت:** `TBD`
+
+---
+
 *این فایل به‌صورت خودکار توسط دستیار پس از هر تغییر مهم به‌روزرسانی می‌شود.*
