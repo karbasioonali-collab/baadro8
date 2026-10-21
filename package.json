@@ -7,7 +7,7 @@
     "build": "prisma generate --schema=prisma/schema.prisma && next build",
     "start": "sh scripts/start.sh",
     "lint": "eslint",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@fontsource/vazirmatn": "^5.2.8",

@@ -10,6 +10,13 @@ import {
   destroySession,
 } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
+import {
+  checkRateLimit,
+  recordFailedAttempt,
+  resetAttempts,
+  getClientIp,
+  RATE_LIMIT_MESSAGE,
+} from "@/lib/rate-limit";
 
 export type OtpRequestState = {
   ok: boolean;
@@ -46,8 +53,20 @@ export async function verifyCustomerOtpAction(
   if (!mobileParsed.success) return { ok: false, error: mobileParsed.error.issues[0]?.message };
   if (!codeParsed.success) return { ok: false, error: codeParsed.error.issues[0]?.message };
 
+  const ip = await getClientIp();
+  const mobileKey = `otp:mobile:${mobileParsed.data}`;
+  const ipKey = `otp:ip:${ip}`;
+
+  const mobileLimit = checkRateLimit(mobileKey);
+  const ipLimit = checkRateLimit(ipKey);
+  if (!mobileLimit.allowed || !ipLimit.allowed) {
+    return { ok: false, error: RATE_LIMIT_MESSAGE };
+  }
+
   const result = await verifyOtp(mobileParsed.data, codeParsed.data);
   if (!result.ok) {
+    recordFailedAttempt(mobileKey);
+    recordFailedAttempt(ipKey);
     return {
       ok: false,
       error:
@@ -56,6 +75,9 @@ export async function verifyCustomerOtpAction(
           : "کد وارد شده صحیح نیست",
     };
   }
+
+  resetAttempts(mobileKey);
+  resetAttempts(ipKey);
 
   const user = await prisma.user.upsert({
     where: { mobile: mobileParsed.data },
@@ -81,15 +103,32 @@ export async function staffLoginAction(
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
+  const ip = await getClientIp();
+  const userKey = `staff:user:${username.toLowerCase()}`;
+  const ipKey = `staff:ip:${ip}`;
+
+  const userLimit = checkRateLimit(userKey);
+  const ipLimit = checkRateLimit(ipKey);
+  if (!userLimit.allowed || !ipLimit.allowed) {
+    return { ok: false, error: RATE_LIMIT_MESSAGE };
+  }
+
   const employee = await prisma.employee.findUnique({ where: { username } });
   if (!employee || !employee.active) {
+    recordFailedAttempt(userKey);
+    recordFailedAttempt(ipKey);
     return { ok: false, error: "نام کاربری یا رمز عبور اشتباه است" };
   }
 
   const valid = await verifyPassword(password, employee.passwordHash);
   if (!valid) {
+    recordFailedAttempt(userKey);
+    recordFailedAttempt(ipKey);
     return { ok: false, error: "نام کاربری یا رمز عبور اشتباه است" };
   }
+
+  resetAttempts(userKey);
+  resetAttempts(ipKey);
 
   await createStaffSession({
     employeeId: employee.id,
@@ -112,15 +151,32 @@ export async function companyLoginAction(
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
+  const ip = await getClientIp();
+  const userKey = `company:user:${username.toLowerCase()}`;
+  const ipKey = `company:ip:${ip}`;
+
+  const userLimit = checkRateLimit(userKey);
+  const ipLimit = checkRateLimit(ipKey);
+  if (!userLimit.allowed || !ipLimit.allowed) {
+    return { ok: false, error: RATE_LIMIT_MESSAGE };
+  }
+
   const account = await prisma.companyAccount.findUnique({ where: { username } });
   if (!account || !account.active) {
+    recordFailedAttempt(userKey);
+    recordFailedAttempt(ipKey);
     return { ok: false, error: "نام کاربری یا رمز عبور اشتباه است" };
   }
 
   const valid = await verifyPassword(password, account.passwordHash);
   if (!valid) {
+    recordFailedAttempt(userKey);
+    recordFailedAttempt(ipKey);
     return { ok: false, error: "نام کاربری یا رمز عبور اشتباه است" };
   }
+
+  resetAttempts(userKey);
+  resetAttempts(ipKey);
 
   await createCompanySession({
     companyAccountId: account.id,
