@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { saveCompanyAction, type CompanyFormInput } from "@/actions/admin/companies";
+import { saveCompanyAction, deleteCompanyAction, type CompanyFormInput } from "@/actions/admin/companies";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +16,8 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
+  const [deletePending, startDeleteTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [value, setValue] = useState<CompanyFormValue>(initial);
   const [citiesText, setCitiesText] = useState(initial.coveredCities.join("، "));
 
@@ -112,6 +114,21 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
         return;
       }
       toast.show("شرکت با موفقیت ذخیره شد", "success");
+      router.push("/admin/companies");
+      router.refresh();
+    });
+  }
+
+  function handleDelete() {
+    if (!value.id) return;
+    startDeleteTransition(async () => {
+      const result = await deleteCompanyAction(value.id!);
+      if (!result.ok) {
+        setShowDeleteConfirm(false);
+        toast.show(result.error ?? "خطا در حذف شرکت", "error");
+        return;
+      }
+      toast.show("شرکت با موفقیت حذف شد", "success");
       router.push("/admin/companies");
       router.refresh();
     });
@@ -674,6 +691,39 @@ export function CompanyForm({ initial }: { initial: CompanyFormValue }) {
       <Button size="lg" loading={pending} onClick={handleSubmit} className="w-full sm:w-auto">
         ذخیره شرکت
       </Button>
+
+      {value.id && (
+        <Button
+          type="button"
+          variant="danger"
+          size="lg"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="w-full sm:w-auto"
+        >
+          حذف شرکت
+        </Button>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-lg">
+            <p className="mb-5 text-neutral-800">آیا از حذف این شرکت اطمینان دارید؟</p>
+            <div className="flex justify-center gap-3">
+              <Button variant="danger" loading={deletePending} onClick={handleDelete}>
+                بله
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={deletePending}
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                خیر
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

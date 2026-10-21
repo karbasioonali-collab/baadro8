@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { getCurrentEmployee } from "@/lib/auth/current-staff";
 import { hashPassword } from "@/lib/auth/password";
 
@@ -259,6 +260,35 @@ export async function toggleCompanyActiveAction(id: string): Promise<SaveCompany
   if (!company) return { ok: false, error: "شرکت یافت نشد" };
 
   await prisma.company.update({ where: { id }, data: { active: !company.active } });
+  revalidatePath("/admin/companies");
+  return { ok: true };
+}
+
+export type DeleteCompanyResult = { ok: boolean; error?: string };
+
+export async function deleteCompanyAction(id: string): Promise<DeleteCompanyResult> {
+  const current = await getCurrentEmployee();
+  if (!current) return { ok: false, error: "دسترسی غیرمجاز" };
+  if (!current.can("companies", "edit") && !current.can("pricing", "edit")) {
+    return { ok: false, error: "شما دسترسی حذف این بخش را ندارید" };
+  }
+
+  const company = await prisma.company.findUnique({ where: { id } });
+  if (!company) return { ok: false, error: "شرکت یافت نشد" };
+
+  try {
+    await prisma.company.delete({ where: { id } });
+  } catch (err) {
+    // P2003 = نقض محدودیت کلید خارجی — یعنی Order/OrderBatch واقعی به این شرکت
+    // وصل است (orders/order_batches در migration با ON DELETE RESTRICT تعریف
+    // شده‌اند، پس خودِ دیتابیس هم این حذف را رد می‌کند؛ این فقط همان خطا را به
+    // پیام فارسی قابل‌فهم تبدیل می‌کند، نه یک چک اضافه‌ی موازی).
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+      return { ok: false, error: "این شرکت دارای سفارش ثبت‌شده است و قابل حذف نیست" };
+    }
+    throw err;
+  }
+
   revalidatePath("/admin/companies");
   return { ok: true };
 }
