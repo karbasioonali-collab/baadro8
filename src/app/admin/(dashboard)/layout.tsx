@@ -7,6 +7,7 @@ import {
   Users,
   Briefcase,
   Image as ImageIcon,
+  Download,
 } from "lucide-react";
 import { getCurrentEmployee } from "@/lib/auth/current-staff";
 import { PanelShell, type PanelNavItem } from "@/components/panel/PanelShell";
@@ -39,6 +40,12 @@ export default async function AdminDashboardLayout({
       href: "/admin/commission-report",
       label: "گزارش کمیسیون",
       icon: <Wallet {...iconProps} />,
+    });
+  if (can("commission_report"))
+    navItems.push({
+      href: "/admin/pwa-stats",
+      label: "آمار نصب اپلیکیشن",
+      icon: <Download {...iconProps} />,
     });
   if (can("users"))
     navItems.push({ href: "/admin/users", label: "کاربران", icon: <Users {...iconProps} /> });

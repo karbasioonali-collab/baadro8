@@ -33,6 +33,9 @@ export function InstallAppButton() {
     function onAppInstalled() {
       setIsInstalled(true);
       setDeferredPrompt(null);
+      // لاگ ساده‌ی آمار نصب — fire-and-forget، منتظر جواب نمی‌مانیم و شکست
+      // احتمالی آن نباید روی تجربه‌ی کاربر اثر بگذارد.
+      fetch("/api/pwa-install", { method: "POST" }).catch(() => {});
     }
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
