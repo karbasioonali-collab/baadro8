@@ -1389,4 +1389,23 @@ DTS یک جدول قیمت جدید‌تر فرستاد — قیمت‌ها حد
 
 ---
 
+### ۱۴۰۵/۰۸/۰۴ (۲۰۲۶-۱۰-۲۲) — رفع ریشه‌ای ENOSPC با `outputFileTracingIncludes`: Prisma CLI حالا داخل standalone است
+
+دیپلوی واقعی `liara_pre_start.sh` (ورودی قبلی) سایت را بالا آورد، ولی در لاگ این خطا دیده شد: `npm error ... ENOSPC: no space left on device` هنگام تلاش `npx` برای دانلود `@mapbox/node-pre-gyp`. تحلیل: چون کد سرور فقط `@prisma/client` را `require` می‌کند (نه خودِ پکیج CLI `prisma`)، tracing خودکار Next.js برای `output: standalone` این پکیج را از `.next/standalone/node_modules` حذف می‌کرد — کاملاً مستقل از اینکه در `package.json` زیر `dependencies` باشد یا نه (tracing بر اساس گراف واقعی `require`، نه دسته‌بندی package.json کار می‌کند). نتیجه: هر بار `liara_pre_start.sh` اجرا می‌شد، `npx prisma --version` چیزی محلی پیدا نمی‌کرد و به‌جای آن از رجیستری npm دانلود می‌کرد — یک ریسک ساختاری تکرارشونده (نه یک اتفاق یک‌باره)، که این‌بار با پر بودن لحظه‌ای دیسک به خطا خورد.
+
+**رفع (`next.config.ts`):** افزودن `outputFileTracingIncludes` (گزینه‌ی رسمی و مستندشده‌ی همین نسخه‌ی Next.js — تایید شد از `node_modules/next/dist/docs/.../output.md`، با مثال تقریباً مشابه برای `sharp`) تا `node_modules/prisma/**/*` و `node_modules/@prisma/engines/**/*` همیشه صریح در کپی نهایی standalone کپی شوند، بدون وابستگی به tracing خودکار.
+
+**تایید عملی (نه فقط «build موفق شد»):**
+- بعد از `next build` محلی، مستقیم چک شد: `.next/standalone/node_modules/prisma` و `.next/standalone/node_modules/@prisma/engines` (شامل باینری واقعی `schema-engine-debian-openssl-3.0.x`، ~۲۲ مگابایت) واقعاً وجود دارند. حجم اضافه‌شده به standalone: ~۶۴ مگابایت.
+- از داخل `.next/standalone`، هم `node node_modules/prisma/build/index.js --version` هم (مهم‌تر، چون دقیقاً همان دستوری است که `liara_pre_start.sh` صدا می‌زند) **خودِ `npx prisma --version`** تست شد — هر دو در کمتر از ۳ ثانیه، بدون هیچ درخواست شبکه/دانلودی، نسخه و مسیر درست schema-engine را چاپ کردند. یعنی برخلاف نگرانی اولیه درباره‌ی نبود symlink در `node_modules/.bin/`، `npx` در عمل نیازی به آن ندارد — resolution واقعی را مستقیم از `package.json`'s `bin` انجام می‌دهد.
+- نتیجه‌ی عملی: **`liara_pre_start.sh` نیازی به تغییر نداشت** — همان فایل تشخیصی قبلی (بدون migrate واقعی) باقی ماند؛ فقط رفع در سمت build (`next.config.ts`) بود.
+
+تست: `tsc`/`eslint` تمیز، هر ۵۴ تست سبز. بدون migration — فقط یک تنظیم build.
+
+**⚠️ باید نتیجه‌ی واقعی دیپلوی بعدی روی Liara چک شود** — این sandbox فقط توانست رفتار را در build/اجرای محلی (`.next/standalone`) تایید کند؛ باید با لاگ واقعی Liara تایید شود که خطای `ENOSPC`/دانلود دیگر تکرار نمی‌شود.
+
+**کامیت:** `TBD`
+
+---
+
 *این فایل به‌صورت خودکار توسط دستیار پس از هر تغییر مهم به‌روزرسانی می‌شود.*
